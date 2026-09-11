@@ -1,16 +1,14 @@
-import { useState } from 'react';
-import type { Alliance, Character } from '../../types';
+import { useState, useMemo } from 'react';
+import { usePlayerStore } from '../../stores/player-store';
+import { getRarityLabel, getInitials, sortByPower } from '../../domain';
+import { getCharacterInfo, type Alliance } from '../../data/static/characters';
 import { Tag } from '../ui/Tag';
 
 /** Props du composant {@link RosterScreen}. */
 export interface RosterScreenProps {
-  /** Liste complète des personnages. */
-  roster: Character[];
-  /** Callback de sélection d'un personnage. */
-  onSelectCharacter: (id: string) => void;
+  onSelectCharacter?: (id: string) => void;
 }
 
-/** Filtre d'alliance disponible. */
 type AllianceFilter = 'all' | Alliance;
 
 const ALLIANCE_FILTERS: { value: AllianceFilter; label: string }[] = [
@@ -20,21 +18,69 @@ const ALLIANCE_FILTERS: { value: AllianceFilter; label: string }[] = [
   { value: 'xenos', label: 'Xenos' },
 ];
 
+const RARITY_TAG_VARIANT: Record<number, 'tag-accent' | 'tag-accent-2' | 'tag-outline' | 'tag-neutral'> = {
+  0: 'tag-neutral',
+  1: 'tag-outline',
+  2: 'tag-accent-2',
+  3: 'tag-accent',
+  4: 'tag-accent',
+  5: 'tag-accent',
+};
+
 /**
- * Écran « Roster » avec recherche textuelle et filtrage par alliance.
- *
- * @param props - {@link RosterScreenProps}
+ * Écran « Roster » connecté au store Zustand.
+ * Affiche les personnages du joueur avec recherche et filtrage par alliance.
  */
-export function RosterScreen({ roster, onSelectCharacter }: RosterScreenProps) {
+export function RosterScreen({ onSelectCharacter }: RosterScreenProps) {
+  const characters = usePlayerStore((s) => s.getCharacters());
   const [query, setQuery] = useState('');
   const [allianceFilter, setAllianceFilter] = useState<AllianceFilter>('all');
+  const [sortBy, setSortBy] = useState<'power' | 'name' | 'level'>('power');
 
-  const q = query.trim().toLowerCase();
-  const filtered = roster.filter((c) => {
-    const matchesQ = !q || c.name.toLowerCase().includes(q) || c.faction.toLowerCase().includes(q);
-    const matchesA = allianceFilter === 'all' || c.alliance === allianceFilter;
-    return matchesQ && matchesA;
-  });
+  const enriched = useMemo(() => {
+    return characters.map((cp) => {
+      const info = getCharacterInfo(cp.characterId);
+      return {
+        ...cp,
+        name: info?.name ?? cp.characterId,
+        faction: info?.faction ?? 'Unknown',
+        alliance: info?.alliance ?? ('imperial' as Alliance),
+        initials: getInitials(info?.name ?? cp.characterId),
+        rarityLabel: getRarityLabel(cp.rarity),
+      };
+    });
+  }, [characters]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let result = enriched.filter((c) => {
+      const matchesQ = !q || c.name.toLowerCase().includes(q) || c.faction.toLowerCase().includes(q);
+      const matchesA = allianceFilter === 'all' || c.alliance === allianceFilter;
+      return matchesQ && matchesA;
+    });
+
+    if (sortBy === 'power') {
+      result = sortByPower(result) as typeof result;
+    } else if (sortBy === 'name') {
+      result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'level') {
+      result = [...result].sort((a, b) => b.level - a.level);
+    }
+
+    return result;
+  }, [enriched, query, allianceFilter, sortBy]);
+
+  if (characters.length === 0) {
+    return (
+      <div>
+        <h1 style={{ marginBottom: 2 }}>Roster</h1>
+        <div className="card elev-sm" style={{ textAlign: 'center', padding: 'var(--space-8)', marginTop: 'var(--space-6)' }}>
+          <div className="card-title">Aucun personnage importé</div>
+          <p className="card-body">Importez vos données depuis l'écran Settings pour voir votre roster.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -42,7 +88,6 @@ export function RosterScreen({ roster, onSelectCharacter }: RosterScreenProps) {
       <p style={{ color: 'color-mix(in srgb, var(--color-text) 65%, transparent)', marginBottom: 'var(--space-4)' }}>
         {filtered.length} personnage(s)
       </p>
-
       <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginBottom: 'var(--space-5)', alignItems: 'center' }}>
         <input
           className="input"
@@ -63,16 +108,25 @@ export function RosterScreen({ roster, onSelectCharacter }: RosterScreenProps) {
             </button>
           ))}
         </div>
+        <select
+          className="input"
+          style={{ maxWidth: 140 }}
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+        >
+          <option value="power">Puissance</option>
+          <option value="name">Nom</option>
+          <option value="level">Niveau</option>
+        </select>
       </div>
-
       {filtered.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 'var(--space-4)' }}>
           {filtered.map((ch) => (
             <div
-              key={ch.id}
+              key={ch.characterId}
               className="card elev-sm"
-              style={{ cursor: 'pointer' }}
-              onClick={() => onSelectCharacter(ch.id)}
+              style={{ cursor: onSelectCharacter ? 'pointer' : 'default' }}
+              onClick={() => onSelectCharacter?.(ch.characterId)}
             >
               <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
                 <div
@@ -91,11 +145,11 @@ export function RosterScreen({ roster, onSelectCharacter }: RosterScreenProps) {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
-                <Tag variant="tag-outline">{ch.allianceLabel}</Tag>
-                <Tag variant={ch.rarityClass}>{ch.rarityLabel}</Tag>
+                <Tag variant="tag-outline">{ch.alliance}</Tag>
+                <Tag variant={RARITY_TAG_VARIANT[ch.rarity] ?? 'tag-neutral'}>{ch.rarityLabel}</Tag>
               </div>
               <div className="card-meta" style={{ marginTop: 2 }}>
-                Rang {ch.rank} · Niveau {ch.level}
+                Rang {ch.rank} · Niveau {ch.level} · ★{ch.stars}
               </div>
             </div>
           ))}
