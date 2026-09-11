@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "profile": {
+    "username": "TestUser",
+    "level": 47,
+    "powerRating": 125000
+  },
+  "characters": {
+    "bellator": {
+      "characterId": "bellator",
+      "rank": 3,
+      "rarity": 2,
+      "stars": 3,
+      "level": 25,
+      "xp": 1200,
+      "shards": 45,
+      "mythicShards": 0,
+      "abilities": { "active": 3, "passive": 2 },
+      "upgrades": ["upgrade-1", "upgrade-2"],
+      "equipment": [
+        { "slot": "weapon", "name": "Bolt Pistol", "rarity": "common", "level": 5 },
+        { "slot": "armor", "name": "Power Armor", "rarity": "uncommon", "level": 3 }
+      ]
+    },
+    "certus": {
+      "characterId": "certus",
+      "rank": 5,
+      "rarity": 4,
+      "stars": 5,
+      "level": 40,
+      "xp": 5600,
+      "shards": 120,
+      "mythicShards": 10,
+      "abilities": { "active": 5, "passive": 4 },
+      "upgrades": ["upgrade-1", "upgrade-3", "upgrade-5"],
+      "equipment": [
+        { "slot": "weapon", "name": "Heavy Bolter", "rarity": "epic", "level": 8 }
+      ]
+    }
+  },
+  "inventory": {
+    "gold": 50000,
+    "blackstone": 1200,
+    "energy": 130,
+    "items": {
+      "shard-common": 250,
+      "badge-iron": 12
+    }
+  },
+  "campaigns": {
+    "indomitus": {
+      "campaignId": "indomitus",
+      "completedBattle": 42,
+      "medals": 85
+    },
+    "fall-of-cadia": {
+      "campaignId": "fall-of-cadia",
+      "completedBattle": 18
+    }
+  },
+  "goals": [
+    {
+      "id": "goal-1",
+      "characterId": "bellator",
+      "type": "rank",
+      "target": 5,
+      "priority": 1,
+      "status": "active"
+    },
+    {
+      "id": "goal-2",
+      "characterId": "certus",
+      "type": "passive",
+      "target": 5,
+      "priority": 2,
+      "status": "paused"
+    }
+  ],
+  "updatedAt": "2026-09-10T18:30:00.000Z"
+}
