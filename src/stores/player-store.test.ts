@@ -1,0 +1,132 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+import { usePlayerStore } from './player-store';
+import { ImportValidationError } from '../adapters/planner-import';
+import { CURRENT_SCHEMA_VERSION } from '../domain';
+
+function loadFixtureRaw(name: string): string {
+  return readFileSync(
+    resolve(__dirname, '../data/fixtures', name),
+    'utf-8',
+  );
+}
+
+beforeEach(() => {
+  usePlayerStore.getState().reset();
+});
+
+describe('player-store initial state', () => {
+  it('should have empty player data by default', () => {
+    const { data } = usePlayerStore.getState();
+    expect(data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+    expect(Object.keys(data.characters)).toHaveLength(0);
+    expect(data.goals).toEqual([]);
+    expect(Object.keys(data.campaigns)).toHaveLength(0);
+  });
+});
+
+describe('importFromJson', () => {
+  it('should import valid JSON and update state', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const { data } = usePlayerStore.getState();
+    expect(data.profile.username).toBe('TestUser');
+    expect(Object.keys(data.characters)).toHaveLength(2);
+    expect(data.goals).toHaveLength(2);
+  });
+
+  it('should throw ImportValidationError for invalid JSON', () => {
+    expect(() => usePlayerStore.getState().importFromJson('bad'))
+      .toThrow(ImportValidationError);
+  });
+
+  it('should throw ImportValidationError for invalid schema', () => {
+    expect(() => usePlayerStore.getState().importFromJson('{"foo":1}'))
+      .toThrow(ImportValidationError);
+  });
+
+  it('should not modify state on failed import', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    try {
+      usePlayerStore.getState().importFromJson('bad');
+    } catch {
+      // expected
+    }
+
+    const { data } = usePlayerStore.getState();
+    expect(data.profile.username).toBe('TestUser');
+  });
+});
+
+describe('reset', () => {
+  it('should reset to empty state', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+    usePlayerStore.getState().reset();
+
+    const { data } = usePlayerStore.getState();
+    expect(Object.keys(data.characters)).toHaveLength(0);
+    expect(data.goals).toEqual([]);
+  });
+});
+
+describe('exportJson', () => {
+  it('should export current state as JSON string', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const exported = usePlayerStore.getState().exportJson();
+    const parsed = JSON.parse(exported);
+    expect(parsed.profile.username).toBe('TestUser');
+    expect(Object.keys(parsed.characters)).toHaveLength(2);
+  });
+
+  it('should produce valid JSON that can be re-imported', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const exported = usePlayerStore.getState().exportJson();
+    usePlayerStore.getState().reset();
+    usePlayerStore.getState().importFromJson(exported);
+
+    const { data } = usePlayerStore.getState();
+    expect(data.profile.username).toBe('TestUser');
+  });
+});
+
+describe('selectors', () => {
+  it('getCharacters should return array of characters', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const chars = usePlayerStore.getState().getCharacters();
+    expect(chars).toHaveLength(2);
+    expect(chars.some((c) => c.characterId === 'bellator')).toBe(true);
+  });
+
+  it('getGoals should return goals array', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const goals = usePlayerStore.getState().getGoals();
+    expect(goals).toHaveLength(2);
+  });
+
+  it('getCampaigns should return array of campaigns', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const campaigns = usePlayerStore.getState().getCampaigns();
+    expect(campaigns).toHaveLength(2);
+  });
+
+  it('selectors should return empty arrays on empty state', () => {
+    expect(usePlayerStore.getState().getCharacters()).toEqual([]);
+    expect(usePlayerStore.getState().getGoals()).toEqual([]);
+    expect(usePlayerStore.getState().getCampaigns()).toEqual([]);
+  });
+});
