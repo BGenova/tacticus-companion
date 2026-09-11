@@ -112,6 +112,25 @@ describe('normalizeImport', () => {
     expect(() => normalizeImport(modified)).toThrow(ImportValidationError);
   });
 
+  it('should accept and preserve optional campaign name/totalBattles/type fields', () => {
+    const input = loadFixture('minimal-player.json') as Record<string, unknown>;
+    const modified = {
+      ...input,
+      campaigns: {
+        indomitus: { campaignId: 'indomitus', completedBattle: 42, medals: 85, name: 'Indomitus', totalBattles: 75, type: 'Standard' },
+      },
+    };
+    const result = normalizeImport(modified);
+    expect(result.campaigns['indomitus']).toMatchObject({ name: 'Indomitus', totalBattles: 75, type: 'Standard' });
+  });
+
+  it('should accept campaigns without the optional name/totalBattles/type fields', () => {
+    const input = loadFixture('minimal-player.json');
+    const result = normalizeImport(input);
+    expect(result.campaigns['indomitus'].name).toBeUndefined();
+    expect(result.campaigns['indomitus'].totalBattles).toBeUndefined();
+  });
+
   it('should throw for invalid goal status', () => {
     const input = loadFixture('minimal-player.json') as Record<string, unknown>;
     const modified = {
