@@ -49,7 +49,7 @@ src/
 - **Commits** : Conventional Commits — `feat(scope)`, `fix(scope)`, `refactor(scope)`, `test(scope)`, `docs`, `chore`.
 - **Scopes** : `domain`, `adapter`, `store`, `roster`, `goals`, `farming`, `ui`, `router`.
 
-## État actuel (Phase 1 complétée)
+## État actuel (Phase 2 complétée)
 
 - ✅ Phase 0.2 : Modèle de domaine (`src/domain/`) : `CharacterProgress`, `Goal`, `CampaignProgress`, `PlayerData`
 - ✅ Phase 0.3 : Adapter d'import (Zod schema + normalisation + ImportValidationError)
@@ -62,7 +62,7 @@ src/
 - ✅ Phase 1.3 : Fonctions domain roster (getRarityLabel, getInitials, sortByPower)
 - ✅ Phase 1.4 : Fiche personnage (`/roster/:id`) connectée au store (progression, équipement, améliorations, objectifs liés)
 - ✅ Phase 1.5 : API Tacticus — import rapide via clé API (session uniquement, dev/test only via proxy Vite)
-- 🔲 Phase 2 : Goals (CRUD, priorités, progression)
+- ✅ Phase 2 : Goals (CRUD, priorités/réordonnancement, progression calculée, Dashboard connecté)
 - 🔲 Phase 3 : Farming (recettes, calculs, plan quotidien)
 
 ## Documentation
