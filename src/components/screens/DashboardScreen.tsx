@@ -1,5 +1,9 @@
 import type { Campaign, RecommendedAction } from '../../types';
 import { ProgressBar } from '../ui/ProgressBar';
+import { Tag } from '../ui/Tag';
+import { usePlayerStore } from '../../stores/player-store';
+import { calculateGoalProgress, getGoalTypeLabel, findCharacterById } from '../../domain';
+import { getCharacterInfo } from '../../data/static/characters';
 
 /** Props du composant {@link DashboardScreen}. */
 export interface DashboardScreenProps {
@@ -9,6 +13,8 @@ export interface DashboardScreenProps {
   actions: RecommendedAction[];
 }
 
+const NEXT_GOALS_LIMIT = 3;
+
 /**
  * Écran principal « Tableau de bord » affichant la progression du compte,
  * les blocages, le farm du jour, les campagnes et les actions recommandées.
@@ -16,12 +22,51 @@ export interface DashboardScreenProps {
  * @param props - {@link DashboardScreenProps}
  */
 export function DashboardScreen({ campaigns, actions }: DashboardScreenProps) {
+  const characters = usePlayerStore((s) => s.getCharacters());
+  const goals = usePlayerStore((s) => s.getSortedGoals());
+
+  const nextGoals = goals
+    .filter((g) => g.status === 'active')
+    .slice(0, NEXT_GOALS_LIMIT)
+    .map((goal) => {
+      const character = findCharacterById(characters, goal.characterId);
+      const info = getCharacterInfo(goal.characterId);
+      const progress = character ? calculateGoalProgress(character, goal) : { current: 0, target: goal.target, pct: 0 };
+      return {
+        id: goal.id,
+        name: info?.name ?? goal.characterId,
+        label: `${getGoalTypeLabel(goal.type)} → ${goal.target}`,
+        pct: progress.pct,
+      };
+    });
+
   return (
     <div>
       <h1 style={{ marginBottom: 2 }}>Tableau de bord</h1>
       <p style={{ color: 'color-mix(in srgb, var(--color-text) 65%, transparent)', marginBottom: 'var(--space-6)' }}>
         Ce qui bloque votre progression, et ce qu'il reste à faire aujourd'hui.
       </p>
+
+      {/* Prochains objectifs */}
+      <h3 style={{ marginBottom: 'var(--space-3)' }}>Prochains objectifs</h3>
+      {nextGoals.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
+          {nextGoals.map((g) => (
+            <div key={g.id} className="card elev-sm" style={{ flexDirection: 'row', alignItems: 'center', gap: 'var(--space-4)' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14 }}>{g.name}</div>
+                <div className="card-meta">{g.label}</div>
+              </div>
+              <Tag variant="tag-accent" style={{ flex: 'none' }}>{g.pct}%</Tag>
+              <div style={{ width: 110, flex: 'none' }}>
+                <ProgressBar pct={g.pct} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="card-body" style={{ marginBottom: 'var(--space-6)' }}>Aucun objectif actif — créez-en un depuis l'écran Goals.</p>
+      )}
 
       {/* Progression du compte */}
       <div className="card elev-sm" style={{ marginBottom: 'var(--space-6)' }}>

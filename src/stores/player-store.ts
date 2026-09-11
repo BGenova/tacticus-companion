@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PlayerData, CharacterProgress, Goal, CampaignProgress, CharacterId } from '../domain';
-import { CURRENT_SCHEMA_VERSION, findCharacterById, getGoalsForCharacter as selectGoalsForCharacter } from '../domain';
+import type { PlayerData, CharacterProgress, Goal, GoalType, GoalStatus, CampaignProgress, CharacterId } from '../domain';
+import {
+  CURRENT_SCHEMA_VERSION,
+  findCharacterById,
+  getGoalsForCharacter as selectGoalsForCharacter,
+  sortGoalsByPriority,
+} from '../domain';
 import { importPlayerData, ImportValidationError } from '../adapters/planner-import';
 
 /**
@@ -46,6 +51,18 @@ function memoizedGoalsForCharacter(): (goals: Goal[], characterId: CharacterId) 
 
 const getGoalsForCharacterValues = memoizedGoalsForCharacter();
 
+const getSortedGoalsValues = (() => {
+  let lastGoals: Goal[] | null = null;
+  let lastResult: Goal[] = [];
+  return (goals: Goal[]) => {
+    if (goals !== lastGoals) {
+      lastGoals = goals;
+      lastResult = sortGoalsByPriority(goals);
+    }
+    return lastResult;
+  };
+})();
+
 function createEmptyPlayerData(): PlayerData {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -63,6 +80,11 @@ export interface PlayerStore {
   importFromJson: (raw: string) => void;
   reset: () => void;
   exportJson: () => string;
+  addGoal: (input: { characterId: CharacterId; type: GoalType; target: number }) => void;
+  updateGoalStatus: (id: string, status: GoalStatus) => void;
+  removeGoal: (id: string) => void;
+  /** Reassigns priorities (1-based) to match the given id order. */
+  reorderGoals: (orderedIds: string[]) => void;
 
   // Selectors
   getCharacters: () => CharacterProgress[];
@@ -70,6 +92,7 @@ export interface PlayerStore {
   getCampaigns: () => CampaignProgress[];
   getCharacterById: (id: CharacterId) => CharacterProgress | undefined;
   getGoalsForCharacter: (characterId: CharacterId) => Goal[];
+  getSortedGoals: () => Goal[];
 }
 
 export const usePlayerStore = create<PlayerStore>()(
@@ -90,11 +113,53 @@ export const usePlayerStore = create<PlayerStore>()(
         return JSON.stringify(get().data, null, 2);
       },
 
+      addGoal: ({ characterId, type, target }) => {
+        const goals = get().data.goals;
+        const nextPriority = goals.length > 0 ? Math.max(...goals.map((g) => g.priority)) + 1 : 1;
+        const newGoal: Goal = {
+          id: crypto.randomUUID(),
+          characterId,
+          type,
+          target,
+          priority: nextPriority,
+          status: 'active',
+        };
+        set((state) => ({ data: { ...state.data, goals: [...state.data.goals, newGoal] } }));
+      },
+
+      updateGoalStatus: (id, status) => {
+        set((state) => ({
+          data: {
+            ...state.data,
+            goals: state.data.goals.map((g) => (g.id === id ? { ...g, status } : g)),
+          },
+        }));
+      },
+
+      removeGoal: (id) => {
+        set((state) => ({
+          data: { ...state.data, goals: state.data.goals.filter((g) => g.id !== id) },
+        }));
+      },
+
+      reorderGoals: (orderedIds) => {
+        set((state) => ({
+          data: {
+            ...state.data,
+            goals: state.data.goals.map((g) => {
+              const index = orderedIds.indexOf(g.id);
+              return index === -1 ? g : { ...g, priority: index + 1 };
+            }),
+          },
+        }));
+      },
+
       getCharacters: () => getCharactersValues(get().data.characters),
       getGoals: () => get().data.goals,
       getCampaigns: () => getCampaignsValues(get().data.campaigns),
       getCharacterById: (id) => findCharacterById(getCharactersValues(get().data.characters), id),
       getGoalsForCharacter: (characterId) => getGoalsForCharacterValues(get().data.goals, characterId),
+      getSortedGoals: () => getSortedGoalsValues(get().data.goals),
     }),
     {
       name: 'tacticus-player-data',

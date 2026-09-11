@@ -62,6 +62,115 @@ describe('importFromJson', () => {
   });
 });
 
+describe('addGoal', () => {
+  it('should add a goal with priority 1 when the goal list is empty', () => {
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+
+    const goals = usePlayerStore.getState().getGoals();
+    expect(goals).toHaveLength(1);
+    expect(goals[0]).toMatchObject({ characterId: 'bellator', type: 'rank', target: 5, priority: 1, status: 'active' });
+    expect(typeof goals[0].id).toBe('string');
+    expect(goals[0].id.length).toBeGreaterThan(0);
+  });
+
+  it('should assign the next priority after existing goals', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rarity', target: 3 });
+
+    const goals = usePlayerStore.getState().getGoals();
+    const maxExistingPriority = Math.max(...goals.filter((g) => g.type !== 'rarity').map((g) => g.priority));
+    const newGoal = goals.find((g) => g.type === 'rarity');
+    expect(newGoal?.priority).toBe(maxExistingPriority + 1);
+  });
+
+  it('should generate unique ids for each goal', () => {
+    usePlayerStore.getState().reset();
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+    usePlayerStore.getState().addGoal({ characterId: 'certus', type: 'rank', target: 5 });
+
+    const [a, b] = usePlayerStore.getState().getGoals();
+    expect(a.id).not.toBe(b.id);
+  });
+});
+
+describe('updateGoalStatus', () => {
+  it('should update the status of the matching goal only', () => {
+    usePlayerStore.getState().reset();
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+    usePlayerStore.getState().addGoal({ characterId: 'certus', type: 'rank', target: 5 });
+    const [first, second] = usePlayerStore.getState().getGoals();
+
+    usePlayerStore.getState().updateGoalStatus(first.id, 'paused');
+
+    const goals = usePlayerStore.getState().getGoals();
+    expect(goals.find((g) => g.id === first.id)?.status).toBe('paused');
+    expect(goals.find((g) => g.id === second.id)?.status).toBe('active');
+  });
+
+  it('should be a no-op for an unknown goal id', () => {
+    usePlayerStore.getState().reset();
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+
+    usePlayerStore.getState().updateGoalStatus('unknown-id', 'done');
+
+    expect(usePlayerStore.getState().getGoals()[0].status).toBe('active');
+  });
+});
+
+describe('removeGoal', () => {
+  it('should remove the matching goal and keep the others', () => {
+    usePlayerStore.getState().reset();
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+    usePlayerStore.getState().addGoal({ characterId: 'certus', type: 'rank', target: 5 });
+    const [first, second] = usePlayerStore.getState().getGoals();
+
+    usePlayerStore.getState().removeGoal(first.id);
+
+    const goals = usePlayerStore.getState().getGoals();
+    expect(goals).toHaveLength(1);
+    expect(goals[0].id).toBe(second.id);
+  });
+});
+
+describe('reorderGoals', () => {
+  it('should reassign priorities based on the given id order', () => {
+    usePlayerStore.getState().reset();
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+    usePlayerStore.getState().addGoal({ characterId: 'certus', type: 'rank', target: 5 });
+    const [first, second] = usePlayerStore.getState().getGoals();
+
+    usePlayerStore.getState().reorderGoals([second.id, first.id]);
+
+    const goals = usePlayerStore.getState().getGoals();
+    expect(goals.find((g) => g.id === second.id)?.priority).toBe(1);
+    expect(goals.find((g) => g.id === first.id)?.priority).toBe(2);
+  });
+});
+
+describe('getSortedGoals', () => {
+  it('should return goals ordered by priority ascending', () => {
+    usePlayerStore.getState().reset();
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+    usePlayerStore.getState().addGoal({ characterId: 'certus', type: 'rank', target: 5 });
+    const [first, second] = usePlayerStore.getState().getGoals();
+    usePlayerStore.getState().reorderGoals([second.id, first.id]);
+
+    const sorted = usePlayerStore.getState().getSortedGoals();
+    expect(sorted.map((g) => g.id)).toEqual([second.id, first.id]);
+  });
+
+  it('should return the same array reference across calls when state has not changed', () => {
+    usePlayerStore.getState().reset();
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+
+    const a = usePlayerStore.getState().getSortedGoals();
+    const b = usePlayerStore.getState().getSortedGoals();
+    expect(a).toBe(b);
+  });
+});
+
 describe('reset', () => {
   it('should reset to empty state', () => {
     const raw = loadFixtureRaw('minimal-player.json');
