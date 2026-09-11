@@ -12,6 +12,18 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      // Dev-only workaround for the Tacticus API rejecting cross-origin
+      // browser requests (Phase 1.5 quick-test import, see
+      // Tacticus_Planner_Documentation_Base/12_TACTICUS_API.md).
+      '/tacticus-api': {
+        target: 'https://api.tacticusgame.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/tacticus-api/, ''),
+      },
+    },
+  },
   test: {
     projects: [{
       extends: true,
