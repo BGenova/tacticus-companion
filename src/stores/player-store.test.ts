@@ -130,3 +130,36 @@ describe('selectors', () => {
     expect(usePlayerStore.getState().getCampaigns()).toEqual([]);
   });
 });
+
+describe('selector referential stability', () => {
+  it('getCharacters should return the same array reference across calls when state has not changed', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const first = usePlayerStore.getState().getCharacters();
+    const second = usePlayerStore.getState().getCharacters();
+
+    expect(first).toBe(second);
+  });
+
+  it('getCharacters should return a new array reference after re-importing data', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+    const first = usePlayerStore.getState().getCharacters();
+
+    usePlayerStore.getState().importFromJson(raw);
+    const second = usePlayerStore.getState().getCharacters();
+
+    expect(first).not.toBe(second);
+  });
+
+  it('getCampaigns should return the same array reference across calls when state has not changed', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const first = usePlayerStore.getState().getCampaigns();
+    const second = usePlayerStore.getState().getCampaigns();
+
+    expect(first).toBe(second);
+  });
+});
