@@ -39,6 +39,9 @@ export const campaignProgressSchema = z.object({
   campaignId: z.string(),
   completedBattle: z.number(),
   medals: z.number().optional(),
+  name: z.string().optional(),
+  totalBattles: z.number().optional(),
+  type: z.string().optional(),
 });
 
 export const playerProfileSchema = z.object({

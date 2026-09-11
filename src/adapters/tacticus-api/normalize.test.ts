@@ -121,6 +121,15 @@ describe('normalizeTacticusPlayer', () => {
     expect(result.campaigns['campaign2'].completedBattle).toBe(1);
   });
 
+  it('should capture the campaign name, type, and total battle count', () => {
+    const result = normalizeTacticusPlayer(validateTacticusResponse(makeApiResponse()));
+    expect(result.campaigns['campaign2']).toMatchObject({
+      name: 'Fall of Cadia',
+      type: 'Standard',
+      totalBattles: 2,
+    });
+  });
+
   it('should flatten the categorized inventory into prefixed keys', () => {
     const result = normalizeTacticusPlayer(validateTacticusResponse(makeApiResponse()));
     expect(result.inventory.items).toEqual({

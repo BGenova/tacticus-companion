@@ -1,14 +1,12 @@
-import type { Campaign, RecommendedAction } from '../../types';
+import type { RecommendedAction } from '../../types';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Tag } from '../ui/Tag';
 import { usePlayerStore } from '../../stores/player-store';
-import { calculateGoalProgress, getGoalTypeLabel, findCharacterById } from '../../domain';
+import { calculateGoalProgress, getGoalTypeLabel, findCharacterById, calculateCampaignProgress, getCampaignTypeLabel } from '../../domain';
 import { getCharacterInfo } from '../../data/static/characters';
 
 /** Props du composant {@link DashboardScreen}. */
 export interface DashboardScreenProps {
-  /** Liste des campagnes en cours. */
-  campaigns: Campaign[];
   /** Actions recommandées. */
   actions: RecommendedAction[];
 }
@@ -21,9 +19,11 @@ const NEXT_GOALS_LIMIT = 3;
  *
  * @param props - {@link DashboardScreenProps}
  */
-export function DashboardScreen({ campaigns, actions }: DashboardScreenProps) {
+export function DashboardScreen({ actions }: DashboardScreenProps) {
   const characters = usePlayerStore((s) => s.getCharacters());
   const goals = usePlayerStore((s) => s.getSortedGoals());
+  const profile = usePlayerStore((s) => s.data.profile);
+  const campaigns = usePlayerStore((s) => s.getCampaigns());
 
   const nextGoals = goals
     .filter((g) => g.status === 'active')
@@ -68,12 +68,22 @@ export function DashboardScreen({ campaigns, actions }: DashboardScreenProps) {
         <p className="card-body" style={{ marginBottom: 'var(--space-6)' }}>Aucun objectif actif — créez-en un depuis l'écran Goals.</p>
       )}
 
-      {/* Progression du compte */}
+      {/* Profil joueur */}
       <div className="card elev-sm" style={{ marginBottom: 'var(--space-6)' }}>
-        <div className="card-kicker">Progression du compte</div>
-        <div className="card-title" style={{ fontSize: 26 }}>Niveau 47</div>
-        <ProgressBar pct={68} height={8} style={{ marginTop: 'var(--space-2)' }} />
-        <div className="card-meta">68% jusqu'au niveau 48 · 12 400 / 18 200 XP</div>
+        <div className="card-kicker">Profil</div>
+        {profile.username ? (
+          <>
+            <div className="card-title" style={{ fontSize: 26 }}>{profile.username}</div>
+            <div className="card-meta">
+              {[
+                profile.level !== undefined ? `Niveau ${profile.level}` : null,
+                profile.powerRating !== undefined ? `Puissance ${profile.powerRating.toLocaleString('fr-FR')}` : null,
+              ].filter(Boolean).join(' · ')}
+            </div>
+          </>
+        ) : (
+          <p className="card-body">Importez vos données depuis Settings pour voir votre profil.</p>
+        )}
       </div>
 
       {/* Blocages + Farm du jour */}
@@ -121,16 +131,29 @@ export function DashboardScreen({ campaigns, actions }: DashboardScreenProps) {
 
       {/* Campagnes */}
       <h3 style={{ marginBottom: 'var(--space-3)' }}>Campagnes</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
-        {campaigns.map((camp) => (
-          <div key={camp.name} className="card elev-sm">
-            <div className="card-kicker">{camp.difficulty}</div>
-            <div className="card-title" style={{ fontSize: 16 }}>{camp.name}</div>
-            <ProgressBar pct={camp.pct} style={{ marginTop: 'var(--space-1)' }} />
-            <div className="card-meta">{camp.pctLabel}</div>
-          </div>
-        ))}
-      </div>
+      {campaigns.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
+          {campaigns.map((camp) => {
+            const pct = calculateCampaignProgress(camp);
+            return (
+              <div key={camp.campaignId} className="card elev-sm">
+                <div className="card-kicker">{getCampaignTypeLabel(camp.type)}</div>
+                <div className="card-title" style={{ fontSize: 16 }}>{camp.name ?? camp.campaignId}</div>
+                {pct !== null ? (
+                  <>
+                    <ProgressBar pct={pct} style={{ marginTop: 'var(--space-1)' }} />
+                    <div className="card-meta">{pct}% complétée · palier {camp.completedBattle}/{camp.totalBattles}</div>
+                  </>
+                ) : (
+                  <div className="card-meta">Palier {camp.completedBattle}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="card-body" style={{ marginBottom: 'var(--space-6)' }}>Aucune campagne importée.</p>
+      )}
 
       {/* Actions recommandées */}
       <h3 style={{ marginBottom: 'var(--space-3)' }}>Actions recommandées</h3>

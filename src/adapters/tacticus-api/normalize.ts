@@ -94,6 +94,11 @@ function normalizeUnit(unit: TacticusUnit): CharacterProgress {
 function normalizeCampaign(campaign: TacticusCampaignProgress): CampaignProgress {
   return {
     campaignId: campaign.id,
+    name: campaign.name,
+    type: campaign.type,
+    // The API returns one entry per stage the campaign has, so the array
+    // length is a real total — not a guess or a hardcoded catalog value.
+    totalBattles: campaign.battles.length,
     completedBattle: campaign.battles.filter((b) => b.attemptsUsed > 0).length,
   };
 }

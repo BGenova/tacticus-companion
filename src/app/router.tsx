@@ -6,11 +6,11 @@ import {
   FarmPlannerScreen,
   SettingsScreen,
 } from '../components/screens';
-import { ACTIONS, CAMPAIGNS, FARM_COMPONENTS, FARM_NODES } from '../data/mock';
+import { ACTIONS, FARM_COMPONENTS, FARM_NODES } from '../data/mock';
 import { RosterPage, CharacterDetailPage } from './navigate-helpers';
 
 function DashboardPage() {
-  return <DashboardScreen campaigns={CAMPAIGNS} actions={ACTIONS} />;
+  return <DashboardScreen actions={ACTIONS} />;
 }
 
 function GoalsPage() {
