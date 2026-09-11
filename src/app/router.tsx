@@ -2,26 +2,15 @@ import { createBrowserRouter } from 'react-router-dom';
 import { Layout } from './layout';
 import {
   DashboardScreen,
-  CharacterDetailScreen,
   GoalsScreen,
   FarmPlannerScreen,
   SettingsScreen,
 } from '../components/screens';
-import { ACTIONS, CAMPAIGNS, FARM_COMPONENTS, FARM_NODES, GOALS, ROSTER } from '../data/mock';
-import { RosterPage } from './navigate-helpers';
+import { ACTIONS, CAMPAIGNS, FARM_COMPONENTS, FARM_NODES, GOALS } from '../data/mock';
+import { RosterPage, CharacterDetailPage } from './navigate-helpers';
 
 function DashboardPage() {
   return <DashboardScreen campaigns={CAMPAIGNS} actions={ACTIONS} />;
-}
-
-function CharacterDetailPage() {
-  return (
-    <CharacterDetailScreen
-      character={ROSTER[0]}
-      onBack={() => {}}
-      onGoToFarm={() => {}}
-    />
-  );
 }
 
 function GoalsPage() {
