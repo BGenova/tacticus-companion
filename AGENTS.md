@@ -60,7 +60,8 @@ src/
 - ✅ Phase 1.1 : Données statiques personnages (`src/data/static/characters.ts`)
 - ✅ Phase 1.2 : Roster connecté au store (filtres alliance, recherche, tri par puissance/nom/niveau)
 - ✅ Phase 1.3 : Fonctions domain roster (getRarityLabel, getInitials, sortByPower)
-- 🔲 Phase 1.4 : Fiche personnage (`/roster/:id`) connectée au store
+- ✅ Phase 1.4 : Fiche personnage (`/roster/:id`) connectée au store (progression, équipement, améliorations, objectifs liés)
+- 🔲 Phase 1.5 : API Tacticus — import rapide via clé API (session uniquement)
 - 🔲 Phase 2 : Goals (CRUD, priorités, progression)
 - 🔲 Phase 3 : Farming (recettes, calculs, plan quotidien)
 

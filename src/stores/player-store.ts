@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PlayerData, CharacterProgress, Goal, CampaignProgress } from '../domain';
-import { CURRENT_SCHEMA_VERSION } from '../domain';
+import type { PlayerData, CharacterProgress, Goal, CampaignProgress, CharacterId } from '../domain';
+import { CURRENT_SCHEMA_VERSION, findCharacterById, getGoalsForCharacter as selectGoalsForCharacter } from '../domain';
 import { importPlayerData, ImportValidationError } from '../adapters/planner-import';
 
 /**
@@ -25,6 +25,27 @@ function memoizedValues<T extends object>(): (record: Record<string, T>) => T[] 
 const getCharactersValues = memoizedValues<CharacterProgress>();
 const getCampaignsValues = memoizedValues<CampaignProgress>();
 
+/**
+ * Same referential-stability concern as {@link memoizedValues}, but keyed on both
+ * the source array reference and the characterId, since the derived result comes
+ * from Array.filter() rather than a plain Object.values() lookup.
+ */
+function memoizedGoalsForCharacter(): (goals: Goal[], characterId: CharacterId) => Goal[] {
+  let lastGoals: Goal[] | null = null;
+  let lastCharacterId: CharacterId | null = null;
+  let lastResult: Goal[] = [];
+  return (goals, characterId) => {
+    if (goals !== lastGoals || characterId !== lastCharacterId) {
+      lastGoals = goals;
+      lastCharacterId = characterId;
+      lastResult = selectGoalsForCharacter(goals, characterId);
+    }
+    return lastResult;
+  };
+}
+
+const getGoalsForCharacterValues = memoizedGoalsForCharacter();
+
 function createEmptyPlayerData(): PlayerData {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -47,6 +68,8 @@ export interface PlayerStore {
   getCharacters: () => CharacterProgress[];
   getGoals: () => Goal[];
   getCampaigns: () => CampaignProgress[];
+  getCharacterById: (id: CharacterId) => CharacterProgress | undefined;
+  getGoalsForCharacter: (characterId: CharacterId) => Goal[];
 }
 
 export const usePlayerStore = create<PlayerStore>()(
@@ -70,6 +93,8 @@ export const usePlayerStore = create<PlayerStore>()(
       getCharacters: () => getCharactersValues(get().data.characters),
       getGoals: () => get().data.goals,
       getCampaigns: () => getCampaignsValues(get().data.campaigns),
+      getCharacterById: (id) => findCharacterById(getCharactersValues(get().data.characters), id),
+      getGoalsForCharacter: (characterId) => getGoalsForCharacterValues(get().data.goals, characterId),
     }),
     {
       name: 'tacticus-player-data',

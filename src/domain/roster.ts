@@ -1,4 +1,5 @@
-import type { CharacterProgress } from './character';
+import type { CharacterId, CharacterProgress } from './character';
+import type { Goal, GoalType } from './goal';
 
 const RARITY_LABELS: Record<number, string> = {
   0: 'Common',
@@ -36,4 +37,35 @@ export function sortByPower(characters: CharacterProgress[]): CharacterProgress[
     if (b.rarity !== a.rarity) return b.rarity - a.rarity;
     return b.level - a.level;
   });
+}
+
+/**
+ * Find a character's progress by its id.
+ */
+export function findCharacterById(
+  characters: CharacterProgress[],
+  id: CharacterId,
+): CharacterProgress | undefined {
+  return characters.find((c) => c.characterId === id);
+}
+
+/**
+ * Filter goals belonging to a given character.
+ */
+export function getGoalsForCharacter(goals: Goal[], characterId: CharacterId): Goal[] {
+  return goals.filter((g) => g.characterId === characterId);
+}
+
+const GOAL_TYPE_LABELS: Record<GoalType, string> = {
+  rank: 'Rang',
+  rarity: 'Rareté',
+  active: 'Compétence active',
+  passive: 'Compétence passive',
+};
+
+/**
+ * Get a human-readable French label for a goal type.
+ */
+export function getGoalTypeLabel(type: GoalType): string {
+  return GOAL_TYPE_LABELS[type];
 }

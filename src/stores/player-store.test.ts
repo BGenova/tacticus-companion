@@ -116,6 +116,50 @@ describe('selectors', () => {
     expect(goals).toHaveLength(2);
   });
 
+  it('getCharacterById should return the matching character', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const character = usePlayerStore.getState().getCharacterById('bellator');
+    expect(character?.characterId).toBe('bellator');
+  });
+
+  it('getCharacterById should return undefined for an unknown id', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    expect(usePlayerStore.getState().getCharacterById('unknown')).toBeUndefined();
+  });
+
+  it('getGoalsForCharacter should return only goals for the given character', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const allGoals = usePlayerStore.getState().getGoals();
+    const characterId = allGoals[0].characterId;
+
+    const result = usePlayerStore.getState().getGoalsForCharacter(characterId);
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.every((g) => g.characterId === characterId)).toBe(true);
+  });
+
+  it('getGoalsForCharacter should return an empty array when no goal matches', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    expect(usePlayerStore.getState().getGoalsForCharacter('unknown')).toEqual([]);
+  });
+
+  it('getGoalsForCharacter should return the same array reference across calls when state has not changed', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const first = usePlayerStore.getState().getGoalsForCharacter('bellator');
+    const second = usePlayerStore.getState().getGoalsForCharacter('bellator');
+
+    expect(first).toBe(second);
+  });
+
   it('getCampaigns should return array of campaigns', () => {
     const raw = loadFixtureRaw('minimal-player.json');
     usePlayerStore.getState().importFromJson(raw);
