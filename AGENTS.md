@@ -49,7 +49,7 @@ src/
 - **Commits** : Conventional Commits — `feat(scope)`, `fix(scope)`, `refactor(scope)`, `test(scope)`, `docs`, `chore`.
 - **Scopes** : `domain`, `adapter`, `store`, `roster`, `goals`, `farming`, `ui`, `router`.
 
-## État actuel (Phase 2 complétée)
+## État actuel (Phase 3 complétée)
 
 - ✅ Phase 0.2 : Modèle de domaine (`src/domain/`) : `CharacterProgress`, `Goal`, `CampaignProgress`, `PlayerData`
 - ✅ Phase 0.3 : Adapter d'import (Zod schema + normalisation + ImportValidationError)
@@ -63,7 +63,7 @@ src/
 - ✅ Phase 1.4 : Fiche personnage (`/roster/:id`) connectée au store (progression, équipement, améliorations, objectifs liés)
 - ✅ Phase 1.5 : API Tacticus — import rapide via clé API (session uniquement, dev/test only via proxy Vite)
 - ✅ Phase 2 : Goals (CRUD, priorités/réordonnancement, progression calculée, Dashboard connecté)
-- 🔲 Phase 3 : Farming (recettes, calculs, plan quotidien)
+- ✅ Phase 3 : Farming — liste de courses + nœuds recommandés pour les objectifs de rang, données de jeu réelles vendorisées depuis `svehera/tacticusplanner` (voir `13_FARMING_DATA_SOURCE.md`). Objectifs rareté/compétences pas encore couverts.
 
 ## Documentation
 
@@ -93,3 +93,4 @@ npm run lint         # ESLint
 - Ne pas modifier les types dans `src/domain/` sans vérifier la cohérence avec `04_DATA_MODEL.md`.
 - Ne pas supprimer `src/data/mock.ts` tant que Dashboard/Goals/Farm ne sont pas connectés au store.
 - Ne pas ignorer les erreurs TypeScript — le projet doit compiler avec `npx tsc --noEmit`.
+- Ne jamais rendre ce projet public/open-source sans revoir `13_FARMING_DATA_SOURCE.md` — les données de farming vendorisées viennent d'un dépôt sans licence déclarée, usage personnel uniquement.

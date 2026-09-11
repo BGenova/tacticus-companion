@@ -6,7 +6,7 @@ import {
   FarmPlannerScreen,
   SettingsScreen,
 } from '../components/screens';
-import { ACTIONS, FARM_COMPONENTS, FARM_NODES } from '../data/mock';
+import { ACTIONS } from '../data/mock';
 import { RosterPage, CharacterDetailPage } from './navigate-helpers';
 
 function DashboardPage() {
@@ -18,7 +18,7 @@ function GoalsPage() {
 }
 
 function FarmPlannerPage() {
-  return <FarmPlannerScreen components={FARM_COMPONENTS} nodes={FARM_NODES} />;
+  return <FarmPlannerScreen />;
 }
 
 function SettingsPage() {
