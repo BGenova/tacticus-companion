@@ -1,11 +1,25 @@
 import { useRef, useState } from 'react';
 import { usePlayerStore } from '../../stores/player-store';
 import { ImportValidationError } from '../../adapters/planner-import';
+import {
+  fetchTacticusPlayer,
+  importTacticusPlayerData,
+  TacticusApiError,
+  TacticusImportValidationError,
+} from '../../adapters/tacticus-api';
+import type { PlayerData } from '../../domain';
 
 type ImportStatus =
   | { state: 'idle' }
   | { state: 'preview'; filename: string; characterCount: number; goalCount: number; raw: string }
   | { state: 'success'; filename: string; characterCount: number }
+  | { state: 'error'; message: string };
+
+type ApiImportStatus =
+  | { state: 'idle' }
+  | { state: 'loading' }
+  | { state: 'preview'; playerData: PlayerData; characterCount: number; campaignCount: number }
+  | { state: 'success'; characterCount: number }
   | { state: 'error'; message: string };
 
 /**
@@ -16,6 +30,8 @@ export function SettingsScreen() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<ImportStatus>({ state: 'idle' });
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [apiImportStatus, setApiImportStatus] = useState<ApiImportStatus>({ state: 'idle' });
 
   const store = usePlayerStore();
   const hasData = Object.keys(store.data.characters).length > 0;
@@ -66,6 +82,40 @@ export function SettingsScreen() {
 
   const handleCancelImport = () => {
     setImportStatus({ state: 'idle' });
+  };
+
+  const handleApiImport = async () => {
+    setApiImportStatus({ state: 'loading' });
+    try {
+      const raw = await fetchTacticusPlayer(apiKey);
+      const playerData = importTacticusPlayerData(raw);
+      setApiImportStatus({
+        state: 'preview',
+        playerData,
+        characterCount: Object.keys(playerData.characters).length,
+        campaignCount: Object.keys(playerData.campaigns).length,
+      });
+    } catch (err) {
+      if (err instanceof TacticusApiError) {
+        setApiImportStatus({ state: 'error', message: err.message });
+      } else if (err instanceof TacticusImportValidationError) {
+        setApiImportStatus({ state: 'error', message: err.issues.join('\n') });
+      } else {
+        setApiImportStatus({ state: 'error', message: "Erreur inattendue lors de l'import API." });
+      }
+    }
+  };
+
+  const handleConfirmApiImport = () => {
+    if (apiImportStatus.state !== 'preview') return;
+
+    store.importFromJson(JSON.stringify(apiImportStatus.playerData));
+    setApiImportStatus({ state: 'success', characterCount: apiImportStatus.characterCount });
+    setApiKey('');
+  };
+
+  const handleCancelApiImport = () => {
+    setApiImportStatus({ state: 'idle' });
   };
 
   const handleExport = () => {
@@ -189,6 +239,91 @@ export function SettingsScreen() {
             Aucune connexion externe active pour le moment.
           </p>
         </div>
+
+        {/* Import rapide API Tacticus (dev/test uniquement, Phase 1.5) */}
+        {import.meta.env.DEV && (
+          <div className="card elev-sm">
+            <div className="card-kicker">Dev/test uniquement</div>
+            <div className="card-title" style={{ fontSize: 16 }}>Import rapide via API Tacticus</div>
+            <p className="card-body">
+              Clé API en mémoire uniquement, jamais enregistrée. Générez-la depuis les paramètres du jeu.
+            </p>
+
+            {apiImportStatus.state === 'idle' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
+                <input
+                  className="input"
+                  type="password"
+                  placeholder="Clé API Tacticus"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={apiKey.trim().length === 0}
+                  onClick={handleApiImport}
+                  style={{ alignSelf: 'flex-start' }}
+                >
+                  Importer depuis l'API
+                </button>
+              </div>
+            )}
+
+            {apiImportStatus.state === 'loading' && (
+              <p className="card-body" style={{ marginTop: 'var(--space-2)' }}>Récupération des données…</p>
+            )}
+
+            {apiImportStatus.state === 'preview' && (
+              <div style={{ marginTop: 'var(--space-2)' }}>
+                <p className="card-body" style={{ marginBottom: 'var(--space-2)' }}>
+                  {apiImportStatus.characterCount} personnage(s), {apiImportStatus.campaignCount} campagne(s) trouvés.
+                </p>
+                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                  <button type="button" className="btn btn-primary" onClick={handleConfirmApiImport}>
+                    Confirmer l'import
+                  </button>
+                  <button type="button" className="btn btn-ghost" onClick={handleCancelApiImport}>
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {apiImportStatus.state === 'success' && (
+              <div style={{ marginTop: 'var(--space-2)' }}>
+                <p className="card-body" style={{ color: 'var(--color-accent)' }}>
+                  ✅ Import réussi — {apiImportStatus.characterCount} personnage(s) importé(s) depuis l'API
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setApiImportStatus({ state: 'idle' })}
+                  style={{ marginTop: 'var(--space-1)' }}
+                >
+                  OK
+                </button>
+              </div>
+            )}
+
+            {apiImportStatus.state === 'error' && (
+              <div style={{ marginTop: 'var(--space-2)' }}>
+                <p className="card-body" style={{ color: 'var(--color-error, #ef4444)' }}>
+                  ❌ Erreur : {apiImportStatus.message}
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setApiImportStatus({ state: 'idle' })}
+                  style={{ marginTop: 'var(--space-1)' }}
+                >
+                  Réessayer
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Zone sensible */}
