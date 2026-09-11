@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getUpgradesForRankRange, calculateMissingUpgrades, findFarmNodesForUpgrade } from './farming';
-import type { FarmNodeInfo } from './farming';
+import { getUpgradesForRankRange, calculateMissingUpgrades, findFarmNodesForUpgrade, calculateShoppingList } from './farming';
+import type { FarmNodeInfo, RankGoalInput } from './farming';
 
 const TIER_NAMES = ['Stone I', 'Stone II', 'Stone III', 'Iron I', 'Iron II'] as const;
 
@@ -87,5 +87,41 @@ describe('findFarmNodesForUpgrade', () => {
 
   it('should return an empty array when no node drops the upgrade', () => {
     expect(findFarmNodesForUpgrade('unknown', farmNodes)).toEqual([]);
+  });
+});
+
+describe('calculateShoppingList', () => {
+  const rankUpgradesByCharacter: Record<string, Record<string, string[]>> = {
+    bellator: { 'Stone II': ['upgA', 'upgB'] },
+    certus: { 'Stone II': ['upgA'] },
+  };
+
+  it('should combine needs across goals before subtracting shared inventory stock', () => {
+    const goals: RankGoalInput[] = [
+      { characterId: 'bellator', currentRank: 0, targetRank: 1 },
+      { characterId: 'certus', currentRank: 0, targetRank: 1 },
+    ];
+    // Both characters need 1x upgA at Stone II -> 2 total needed, only 1 in stock.
+    const result = calculateShoppingList(goals, TIER_NAMES, rankUpgradesByCharacter, { 'upgrade:upgA': 1 });
+    const upgA = result.find((u) => u.upgradeId === 'upgA');
+    expect(upgA).toEqual({ upgradeId: 'upgA', needed: 2, have: 1, missing: 1 });
+  });
+
+  it('should exclude upgrades that are already fully covered by inventory', () => {
+    const goals: RankGoalInput[] = [{ characterId: 'bellator', currentRank: 0, targetRank: 1 }];
+    const result = calculateShoppingList(goals, TIER_NAMES, rankUpgradesByCharacter, {
+      'upgrade:upgA': 10,
+      'upgrade:upgB': 10,
+    });
+    expect(result).toEqual([]);
+  });
+
+  it('should return an empty list when there are no goals', () => {
+    expect(calculateShoppingList([], TIER_NAMES, rankUpgradesByCharacter, {})).toEqual([]);
+  });
+
+  it('should treat a character with no known rank-up data as needing nothing', () => {
+    const goals: RankGoalInput[] = [{ characterId: 'unknown-char', currentRank: 0, targetRank: 1 }];
+    expect(calculateShoppingList(goals, TIER_NAMES, rankUpgradesByCharacter, {})).toEqual([]);
   });
 });

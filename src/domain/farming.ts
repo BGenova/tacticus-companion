@@ -47,6 +47,31 @@ export function calculateMissingUpgrades(
   });
 }
 
+export interface RankGoalInput {
+  characterId: string;
+  currentRank: number;
+  targetRank: number;
+}
+
+/**
+ * Combine upgrade needs across several rank goals *before* subtracting
+ * inventory stock, since that stock is shared: computing each goal's missing
+ * amount independently against the same inventory would double-count what's
+ * available and under-report the real shortage. Fully-covered upgrades
+ * (missing === 0) are excluded from the result.
+ */
+export function calculateShoppingList(
+  goals: RankGoalInput[],
+  rankTierNames: readonly string[],
+  rankUpgradesByCharacter: Record<string, Record<string, string[]>>,
+  inventoryItems: Record<string, number>,
+): MissingUpgrade[] {
+  const allNeeded = goals.flatMap((g) =>
+    getUpgradesForRankRange(rankTierNames, rankUpgradesByCharacter[g.characterId] ?? {}, g.currentRank, g.targetRank),
+  );
+  return calculateMissingUpgrades(allNeeded, inventoryItems).filter((u) => u.missing > 0);
+}
+
 export interface FarmNodeInfo {
   campaign: string;
   nodeNumber: number;
