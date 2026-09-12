@@ -1,4 +1,7 @@
 import type { CampaignProgress } from './campaign';
+import type { Goal } from './goal';
+import type { CharacterProgress } from './character';
+import { findCharacterById } from './roster';
 
 /** A single upgrade material still needed to reach a goal, tallied against inventory stock. */
 export interface MissingUpgrade {
@@ -53,6 +56,22 @@ export interface RankGoalInput {
   characterId: string;
   currentRank: number;
   targetRank: number;
+}
+
+/**
+ * Build shopping-list inputs from active rank goals, resolving each goal's
+ * character against the roster. Paused/done goals, non-rank goals, and goals
+ * for a character not present in the roster are skipped.
+ */
+export function buildRankGoalInputs(goals: Goal[], characters: CharacterProgress[]): RankGoalInput[] {
+  const inputs: RankGoalInput[] = [];
+  for (const goal of goals) {
+    if (goal.status !== 'active' || goal.type !== 'rank') continue;
+    const character = findCharacterById(characters, goal.characterId);
+    if (!character) continue;
+    inputs.push({ characterId: goal.characterId, currentRank: character.rank, targetRank: goal.target });
+  }
+  return inputs;
 }
 
 /**
@@ -153,4 +172,41 @@ export function findCampaignOpportunities(
     nextNodeNumber: v.nextNodeNumber,
     upgradeIds: Array.from(v.upgradeIds),
   }));
+}
+
+export interface RecommendedFarmNode {
+  nodeId: string;
+  campaign: string;
+  nodeNumber: number;
+  energyCost: number;
+  upgradeIds: string[];
+}
+
+/**
+ * Group needed upgrades by their cheapest farm node, so a player farming
+ * that node once covers every upgrade grouped under it.
+ */
+export function recommendFarmNodes(
+  upgradeIds: string[],
+  farmNodes: Record<string, FarmNodeInfo>,
+): RecommendedFarmNode[] {
+  const byNode = new Map<string, RecommendedFarmNode>();
+  for (const upgradeId of upgradeIds) {
+    const best = findFarmNodesForUpgrade(upgradeId, farmNodes)[0];
+    if (!best) continue;
+
+    const existing = byNode.get(best.nodeId);
+    if (existing) {
+      existing.upgradeIds.push(upgradeId);
+    } else {
+      byNode.set(best.nodeId, {
+        nodeId: best.nodeId,
+        campaign: best.campaign,
+        nodeNumber: best.nodeNumber,
+        energyCost: best.energyCost,
+        upgradeIds: [upgradeId],
+      });
+    }
+  }
+  return Array.from(byNode.values());
 }
