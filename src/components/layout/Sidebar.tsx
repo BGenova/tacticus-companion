@@ -79,6 +79,15 @@ const NAV_ENTRIES: NavEntry[] = [
     ),
   },
   {
+    screen: 'legendaryEvents',
+    label: 'Legendary Events',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2l2.6 6.6L21 11l-6.4 2.4L12 20l-2.6-6.6L3 11l6.4-2.4L12 2z" />
+      </svg>
+    ),
+  },
+  {
     screen: 'settings',
     label: 'Settings',
     icon: (

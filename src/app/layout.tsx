@@ -9,6 +9,7 @@ const ROUTE_TO_SCREEN: Record<string, Screen> = {
   '/farm': 'farm',
   '/campaigns': 'campaigns',
   '/history': 'history',
+  '/legendary-events': 'legendaryEvents',
   '/settings': 'settings',
 };
 
@@ -20,6 +21,7 @@ const SCREEN_TO_ROUTE: Record<Screen, string> = {
   farm: '/farm',
   campaigns: '/campaigns',
   history: '/history',
+  legendaryEvents: '/legendary-events',
   settings: '/settings',
 };
 

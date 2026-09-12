@@ -5,4 +5,5 @@ export { GoalsScreen } from './GoalsScreen';
 export { FarmPlannerScreen } from './FarmPlannerScreen';
 export { CampaignsScreen } from './CampaignsScreen';
 export { HistoryScreen } from './HistoryScreen';
+export { LegendaryEventsScreen } from './LegendaryEventsScreen';
 export { SettingsScreen } from './SettingsScreen';

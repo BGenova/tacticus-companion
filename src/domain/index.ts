@@ -8,6 +8,8 @@ export { calculateCampaignProgress, getCampaignTypeLabel, groupCampaignsByName }
 export type { PlayerProfile, Inventory, PlayerData } from './player-data';
 export type { RosterSnapshot, CompletedGoalEntry, CharacterDiff, RosterDiff, ProgressionStats } from './history';
 export { diffRosterSnapshots, calculateProgressionStats } from './history';
+export type { RawLaneBattleProgress, LaneProgressSummary, LegendaryEventLaneProgress, LegendaryEventProgress } from './legendary-event';
+export { summarizeLaneProgress } from './legendary-event';
 export type { MissingUpgrade, FarmNodeInfo, FarmNodeMatch, RankGoalInput, CampaignOpportunity, RecommendedFarmNode } from './farming';
 export {
   getUpgradesForRankRange,

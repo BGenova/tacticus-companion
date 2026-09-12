@@ -1,6 +1,7 @@
 import type { CharacterId, CharacterProgress } from './character';
 import type { CampaignProgress } from './campaign';
 import type { Goal } from './goal';
+import type { LegendaryEventProgress } from './legendary-event';
 
 /** Profil du joueur. */
 export interface PlayerProfile {
@@ -26,6 +27,8 @@ export interface PlayerData {
   inventory: Inventory;
   campaigns: Record<string, CampaignProgress>;
   goals: Goal[];
+  /** Only populated by API imports — not part of the JSON planner format. */
+  legendaryEvents?: LegendaryEventProgress[];
   /** ISO 8601. */
   updatedAt: string;
 }
