@@ -49,7 +49,7 @@ src/
 - **Commits** : Conventional Commits — `feat(scope)`, `fix(scope)`, `refactor(scope)`, `test(scope)`, `docs`, `chore`.
 - **Scopes** : `domain`, `adapter`, `store`, `roster`, `goals`, `farming`, `ui`, `router`.
 
-## État actuel (Phase 3 complétée)
+## État actuel (Phase 4 complétée)
 
 - ✅ Phase 0.2 : Modèle de domaine (`src/domain/`) : `CharacterProgress`, `Goal`, `CampaignProgress`, `PlayerData`
 - ✅ Phase 0.3 : Adapter d'import (Zod schema + normalisation + ImportValidationError)
@@ -64,6 +64,7 @@ src/
 - ✅ Phase 1.5 : API Tacticus — import rapide via clé API (session uniquement, dev/test only via proxy Vite)
 - ✅ Phase 2 : Goals (CRUD, priorités/réordonnancement, progression calculée, Dashboard connecté)
 - ✅ Phase 3 : Farming — liste de courses + nœuds recommandés pour les objectifs de rang, données de jeu réelles vendorisées depuis `svehera/tacticusplanner` (voir `13_FARMING_DATA_SOURCE.md`). Objectifs rareté/compétences pas encore couverts.
+- ✅ Phase 4 : Campaigns — nouvel écran `/campaigns`, progression par variante (Standard/Mirror/Elite/EliteMirror) groupée par nom, campagnes "rentables à pousser" détectées par recoupement avec la liste de courses (Phase 3). Personnages requis par nœud pas encore intégrés.
 
 ## Documentation
 
