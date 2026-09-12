@@ -4,9 +4,11 @@ import { z } from 'zod';
  * Zod schemas mirroring the subset of the official Tacticus API response
  * (https://api.tacticusgame.com/api-docs, endpoint GET /api/v1/player) that we
  * actually consume. Unused branches of the real response (arena, guildRaid,
- * onslaught, salvageRun, legendaryEvents…) are intentionally omitted — Zod
- * object schemas strip unknown keys by default, so they simply pass through
- * unvalidated instead of causing an error.
+ * onslaught, salvageRun…) are intentionally omitted — Zod object schemas
+ * strip unknown keys by default, so they simply pass through unvalidated
+ * instead of causing an error. legendaryEvents is consumed, but only its
+ * progress fields — battleConfigs (objective definitions, very verbose) is
+ * intentionally not modeled, same stripping behavior.
  */
 
 export const tacticusAbilitySchema = z.object({
@@ -72,12 +74,35 @@ export const tacticusPlayerDetailsSchema = z.object({
   powerLevel: z.number(),
 });
 
+const tacticusLaneBattleProgressSchema = z.object({
+  objectivesCleared: z.array(z.number()),
+  highScore: z.number(),
+  encounterPoints: z.number(),
+});
+
+const tacticusLaneSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  progress: z.array(tacticusLaneBattleProgressSchema),
+});
+
+export const tacticusLegendaryEventSchema = z.object({
+  /** Id of the character this Legendary Event is tied to. */
+  id: z.string(),
+  lanes: z.array(tacticusLaneSchema),
+  currentPoints: z.number().optional(),
+  currentCurrency: z.number(),
+  currentShards: z.number(),
+  currentClaimedChestIndex: z.number(),
+});
+
 export const tacticusPlayerSchema = z.object({
   details: tacticusPlayerDetailsSchema,
   units: z.array(tacticusUnitSchema),
   inventory: tacticusInventorySchema,
   progress: z.object({
     campaigns: z.array(tacticusCampaignProgressSchema),
+    legendaryEvents: z.array(tacticusLegendaryEventSchema),
   }),
 });
 
@@ -98,4 +123,5 @@ export const tacticusPlayerResponseSchema = z.object({
 export type TacticusUnit = z.infer<typeof tacticusUnitSchema>;
 export type TacticusCampaignProgress = z.infer<typeof tacticusCampaignProgressSchema>;
 export type TacticusInventory = z.infer<typeof tacticusInventorySchema>;
+export type TacticusLegendaryEvent = z.infer<typeof tacticusLegendaryEventSchema>;
 export type TacticusPlayerResponse = z.infer<typeof tacticusPlayerResponseSchema>;

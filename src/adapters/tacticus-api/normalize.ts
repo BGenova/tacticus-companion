@@ -1,11 +1,12 @@
-import type { PlayerData, CharacterProgress, CampaignProgress, Equipment } from '../../domain';
-import { CURRENT_SCHEMA_VERSION } from '../../domain';
+import type { PlayerData, CharacterProgress, CampaignProgress, Equipment, LegendaryEventProgress } from '../../domain';
+import { CURRENT_SCHEMA_VERSION, summarizeLaneProgress } from '../../domain';
 import {
   tacticusPlayerResponseSchema,
   type TacticusPlayerResponse,
   type TacticusUnit,
   type TacticusCampaignProgress,
   type TacticusInventory,
+  type TacticusLegendaryEvent,
 } from './schema';
 import { FARM_NODES } from '../../data/static/farm-nodes';
 
@@ -135,6 +136,21 @@ function normalizeCampaign(campaign: TacticusCampaignProgress): CampaignProgress
   };
 }
 
+function normalizeLegendaryEvent(event: TacticusLegendaryEvent): LegendaryEventProgress {
+  return {
+    characterId: event.id,
+    currentPoints: event.currentPoints ?? 0,
+    currentCurrency: event.currentCurrency,
+    currentShards: event.currentShards,
+    currentClaimedChestIndex: event.currentClaimedChestIndex,
+    lanes: event.lanes.map((lane) => ({
+      laneId: lane.id,
+      laneName: lane.name,
+      ...summarizeLaneProgress(lane.progress),
+    })),
+  };
+}
+
 function flattenInventory(inventory: TacticusInventory): Record<string, number> {
   const items: Record<string, number> = {};
 
@@ -175,6 +191,8 @@ export function normalizeTacticusPlayer(response: TacticusPlayerResponse): Playe
     campaigns[campaign.id] = normalizeCampaign(campaign);
   }
 
+  const legendaryEvents = player.progress.legendaryEvents.map(normalizeLegendaryEvent);
+
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     profile: {
@@ -185,6 +203,7 @@ export function normalizeTacticusPlayer(response: TacticusPlayerResponse): Playe
     inventory: { items: flattenInventory(player.inventory) },
     campaigns,
     goals: [],
+    legendaryEvents,
     // The API caches player data server-side; lastUpdatedOn (when Snowprint's
     // server actually refreshed it) is a more honest freshness indicator than
     // "now" (when we happened to fetch a possibly-stale cached response).

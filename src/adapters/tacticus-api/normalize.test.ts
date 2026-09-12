@@ -56,6 +56,7 @@ function makeApiResponse(overrides: Record<string, unknown> = {}) {
             ],
           },
         ],
+        legendaryEvents: [],
       },
     },
     ...overrides,
@@ -201,6 +202,64 @@ describe('normalizeTacticusPlayer', () => {
     const parsed = new Date(result.updatedAt).getTime();
     expect(parsed).toBeGreaterThanOrEqual(before);
     expect(parsed).toBeLessThanOrEqual(Date.now());
+  });
+
+  it('should produce an empty legendaryEvents array when the player has none', () => {
+    const result = normalizeTacticusPlayer(validateTacticusResponse(makeApiResponse()));
+    expect(result.legendaryEvents).toEqual([]);
+  });
+
+  it('should normalize legendary event progress, summarizing each lane', () => {
+    const response = makeApiResponse();
+    response.player.progress.legendaryEvents = [
+      {
+        id: 'astarLysander',
+        currentPoints: 2013,
+        currentCurrency: 40,
+        currentShards: 100,
+        currentClaimedChestIndex: 4,
+        lanes: [
+          {
+            id: 1,
+            name: 'Alpha',
+            progress: [
+              { objectivesCleared: [0], highScore: 32, encounterPoints: 32 },
+              { objectivesCleared: [], highScore: 10, encounterPoints: 10 },
+            ],
+          },
+          {
+            id: 2,
+            name: 'Beta',
+            progress: [
+              { objectivesCleared: [0], highScore: 31, encounterPoints: 31 },
+            ],
+          },
+        ],
+      },
+    ];
+    const result = normalizeTacticusPlayer(validateTacticusResponse(response));
+    expect(result.legendaryEvents).toEqual([
+      {
+        characterId: 'astarLysander',
+        currentPoints: 2013,
+        currentCurrency: 40,
+        currentShards: 100,
+        currentClaimedChestIndex: 4,
+        lanes: [
+          { laneId: 1, laneName: 'Alpha', encounterPoints: 42, objectivesClearedCount: 1, battlesTracked: 2 },
+          { laneId: 2, laneName: 'Beta', encounterPoints: 31, objectivesClearedCount: 1, battlesTracked: 1 },
+        ],
+      },
+    ]);
+  });
+
+  it('should default currentPoints to 0 when the API omits it', () => {
+    const response = makeApiResponse();
+    response.player.progress.legendaryEvents = [
+      { id: 'astarLysander', currentCurrency: 0, currentShards: 0, currentClaimedChestIndex: 0, lanes: [] },
+    ];
+    const result = normalizeTacticusPlayer(validateTacticusResponse(response));
+    expect(result.legendaryEvents?.[0].currentPoints).toBe(0);
   });
 });
 
