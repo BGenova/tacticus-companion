@@ -3,6 +3,7 @@ import { getRarityLabel, getInitials, getGoalTypeLabel } from '../../domain';
 import { getCharacterInfo, type Alliance } from '../../data/static/characters';
 import { StatCard } from '../ui/StatCard';
 import { Tag } from '../ui/Tag';
+import { CharacterAvatar } from '../ui/CharacterAvatar';
 
 /** Props du composant {@link CharacterDetailScreen}. */
 export interface CharacterDetailScreenProps {
@@ -64,16 +65,7 @@ export function CharacterDetailScreen({ characterId, onBack, onGoToFarm }: Chara
       <BackButton onBack={onBack} />
 
       <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'center', marginBottom: 'var(--space-6)', flexWrap: 'wrap' }}>
-        <div
-          style={{
-            width: 88, height: 88, flex: 'none', borderRadius: 'var(--radius-md)',
-            background: 'var(--color-accent-900)', color: 'var(--color-accent-200)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-heading)', fontSize: 26,
-          }}
-        >
-          {getInitials(name)}
-        </div>
+        <CharacterAvatar characterId={character.characterId} initials={getInitials(name)} size={88} />
         <div>
           <h2 style={{ marginBottom: 6 }}>{name}</h2>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>

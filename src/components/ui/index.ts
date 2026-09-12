@@ -6,3 +6,6 @@ export type { TagProps } from './Tag';
 
 export { StatCard } from './StatCard';
 export type { StatCardProps } from './StatCard';
+
+export { CharacterAvatar } from './CharacterAvatar';
+export type { CharacterAvatarProps } from './CharacterAvatar';
