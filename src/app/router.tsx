@@ -5,6 +5,7 @@ import {
   GoalsScreen,
   FarmPlannerScreen,
   CampaignsScreen,
+  HistoryScreen,
   SettingsScreen,
 } from '../components/screens';
 import { ACTIONS } from '../data/mock';
@@ -26,6 +27,10 @@ function CampaignsPage() {
   return <CampaignsScreen />;
 }
 
+function HistoryPage() {
+  return <HistoryScreen />;
+}
+
 function SettingsPage() {
   return <SettingsScreen />;
 }
@@ -41,6 +46,7 @@ export const router = createBrowserRouter([
       { path: 'goals', element: <GoalsPage /> },
       { path: 'farm', element: <FarmPlannerPage /> },
       { path: 'campaigns', element: <CampaignsPage /> },
+      { path: 'history', element: <HistoryPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },
