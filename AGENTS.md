@@ -24,9 +24,8 @@ src/
   adapters/       ← Import/export, validation Zod
   stores/         ← Zustand stores avec persist
   data/
-    static/       ← Données de jeu (personnages)
+    static/       ← Données de jeu (personnages, upgrades, campagnes, nœuds de farm)
     fixtures/     ← JSON de test (minimal, empty, invalid)
-    mock.ts       ← Données mock (temporaire, utilisé par Dashboard/Goals/Farm)
   components/
     ui/           ← Composants réutilisables (Tag, ProgressBar, StatCard)
     layout/       ← Sidebar, Layout
@@ -67,6 +66,7 @@ src/
 - ✅ Phase 3 : Farming — liste de courses + nœuds recommandés pour les objectifs de rang, données de jeu réelles vendorisées depuis `svehera/tacticusplanner` (voir `13_FARMING_DATA_SOURCE.md`). Objectifs rareté/compétences pas encore couverts.
 - ✅ Phase 4 : Campaigns — nouvel écran `/campaigns`, progression par variante (Standard/Mirror/Elite/EliteMirror) groupée par nom, campagnes "rentables à pousser" détectées par recoupement avec la liste de courses (Phase 3). Personnages requis par nœud pas encore intégrés.
 - ✅ Phase 5 : History — snapshots de roster automatiques (IndexedDB via `idb`) à chaque import, diff snapshot vs état actuel, historique des objectifs terminés, statistiques de progression basiques.
+- ✅ Dashboard entièrement connecté au store (plus aucune donnée mock) — `src/data/mock.ts` supprimé.
 
 ## Documentation
 
@@ -94,6 +94,5 @@ npm run lint         # ESLint
 
 - Ne pas ajouter de backend ou d'appels API (local-first).
 - Ne pas modifier les types dans `src/domain/` sans vérifier la cohérence avec `04_DATA_MODEL.md`.
-- Ne pas supprimer `src/data/mock.ts` tant que Dashboard/Goals/Farm ne sont pas connectés au store.
 - Ne pas ignorer les erreurs TypeScript — le projet doit compiler avec `npx tsc --noEmit`.
 - Ne jamais rendre ce projet public/open-source sans revoir `13_FARMING_DATA_SOURCE.md` — les données de farming vendorisées viennent d'un dépôt sans licence déclarée, usage personnel uniquement.
