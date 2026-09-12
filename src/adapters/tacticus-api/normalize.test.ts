@@ -116,18 +116,50 @@ describe('normalizeTacticusPlayer', () => {
     ]);
   });
 
-  it('should count engaged battles (attemptsUsed > 0) as completedBattle', () => {
+  it('should use the number of battle entries returned as completedBattle', () => {
+    // attemptsUsed is a daily counter, not a lifetime completion flag — the
+    // API only returns entries for stages unlocked so far, so the array
+    // length itself is the progress signal. makeApiResponse's campaign2 has
+    // 2 battle entries.
     const result = normalizeTacticusPlayer(validateTacticusResponse(makeApiResponse()));
-    expect(result.campaigns['campaign2'].completedBattle).toBe(1);
+    expect(result.campaigns['campaign2'].completedBattle).toBe(2);
   });
 
-  it('should capture the campaign name, type, and total battle count', () => {
+  it('should capture the campaign name/type, and use the vendored total battle count (not the live array length)', () => {
     const result = normalizeTacticusPlayer(validateTacticusResponse(makeApiResponse()));
     expect(result.campaigns['campaign2']).toMatchObject({
       name: 'Fall of Cadia',
       type: 'Standard',
-      totalBattles: 2,
+      totalBattles: 75, // real value from src/data/static/farm-nodes.ts, unrelated to the 2-entry mock response
     });
+  });
+
+  it('should fall back to the live battle count when the campaign is not in the vendored dataset', () => {
+    const response = makeApiResponse();
+    response.player.progress.campaigns[0].name = 'Some Unknown Event Campaign';
+    const result = normalizeTacticusPlayer(validateTacticusResponse(response));
+    expect(result.campaigns['campaign2'].totalBattles).toBe(2);
+  });
+
+  it('should cap completedBattle at totalBattles (the sentinel "no actual battle" stage can push the live count past the real total)', () => {
+    const response = makeApiResponse();
+    response.player.progress.campaigns[0].battles = Array.from({ length: 80 }, (_, i) => ({
+      battleIndex: i,
+      attemptsLeft: 0,
+      attemptsUsed: 0,
+    }));
+    const result = normalizeTacticusPlayer(validateTacticusResponse(response));
+    // Fall of Cadia's real total (vendored) is 75.
+    expect(result.campaigns['campaign2'].completedBattle).toBe(75);
+  });
+
+  it('should resolve known campaign name mismatches between the API and the vendored dataset', () => {
+    // Confirmed on a real account (2026-09-12): the API returns "Saim-Hainn",
+    // the vendored dataset (sourced separately) spells it "Saim-Hann".
+    const response = makeApiResponse();
+    response.player.progress.campaigns[0].name = 'Saim-Hainn';
+    const result = normalizeTacticusPlayer(validateTacticusResponse(response));
+    expect(result.campaigns['campaign2'].totalBattles).toBe(75);
   });
 
   it('should flatten the categorized inventory into prefixed keys', () => {
