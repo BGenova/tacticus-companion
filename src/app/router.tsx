@@ -8,11 +8,10 @@ import {
   HistoryScreen,
   SettingsScreen,
 } from '../components/screens';
-import { ACTIONS } from '../data/mock';
 import { RosterPage, CharacterDetailPage } from './navigate-helpers';
 
 function DashboardPage() {
-  return <DashboardScreen actions={ACTIONS} />;
+  return <DashboardScreen />;
 }
 
 function GoalsPage() {
