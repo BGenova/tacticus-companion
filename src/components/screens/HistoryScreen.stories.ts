@@ -13,8 +13,8 @@ const SAMPLE_DATA = {
   schemaVersion: 1,
   profile: { username: 'TestUser' },
   characters: {
-    bellator: {
-      characterId: 'bellator', rank: 3, rarity: 2, stars: 3, level: 25, xp: 1200,
+    ultraInceptorSgt: {
+      characterId: 'ultraInceptorSgt', rank: 3, rarity: 2, stars: 3, level: 25, xp: 1200,
       shards: 45, mythicShards: 0, abilities: { active: 3, passive: 2 }, upgrades: [], equipment: [],
     },
   },
@@ -49,13 +49,13 @@ export const WithSnapshotAndDiff: Story = {
     await clearHistoryDb();
 
     usePlayerStore.getState().importFromJson(JSON.stringify(SAMPLE_DATA));
-    // Rank up bellator and re-import: this creates a snapshot of the
+    // Rank up ultraInceptorSgt and re-import: this creates a snapshot of the
     // rank-3 state before overwriting it with the rank-5 state.
     usePlayerStore.getState().importFromJson(JSON.stringify({
       ...SAMPLE_DATA,
-      characters: { bellator: { ...SAMPLE_DATA.characters.bellator, rank: 5 } },
+      characters: { ultraInceptorSgt: { ...SAMPLE_DATA.characters.ultraInceptorSgt, rank: 5 } },
     }));
-    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+    usePlayerStore.getState().addGoal({ characterId: 'ultraInceptorSgt', type: 'rank', target: 5 });
     const goal = usePlayerStore.getState().getGoals()[0];
     usePlayerStore.getState().updateGoalStatus(goal.id, 'done');
 
