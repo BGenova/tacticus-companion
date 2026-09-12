@@ -8,6 +8,7 @@ import {
   sortGoalsByPriority,
 } from '../domain';
 import { importPlayerData, ImportValidationError } from '../adapters/planner-import';
+import { saveSnapshot, saveCompletedGoal } from '../adapters/history-db';
 
 /**
  * Cache Object.values() results keyed by the source record reference, so repeated
@@ -101,8 +102,15 @@ export const usePlayerStore = create<PlayerStore>()(
       data: createEmptyPlayerData(),
 
       importFromJson: (raw: string) => {
+        const previousData = get().data;
         const playerData = importPlayerData(raw);
         set({ data: playerData });
+
+        // History is best-effort: a snapshot only makes sense once there was
+        // something to preserve, and a failed write must not break the import.
+        if (Object.keys(previousData.characters).length > 0) {
+          saveSnapshot({ id: crypto.randomUUID(), takenAt: new Date().toISOString(), data: previousData }).catch(() => {});
+        }
       },
 
       reset: () => {
@@ -128,12 +136,23 @@ export const usePlayerStore = create<PlayerStore>()(
       },
 
       updateGoalStatus: (id, status) => {
+        const goal = get().data.goals.find((g) => g.id === id);
         set((state) => ({
           data: {
             ...state.data,
             goals: state.data.goals.map((g) => (g.id === id ? { ...g, status } : g)),
           },
         }));
+
+        if (goal && status === 'done' && goal.status !== 'done') {
+          saveCompletedGoal({
+            goalId: goal.id,
+            characterId: goal.characterId,
+            type: goal.type,
+            target: goal.target,
+            completedAt: new Date().toISOString(),
+          }).catch(() => {});
+        }
       },
 
       removeGoal: (id) => {

@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import 'fake-indexeddb/auto';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { usePlayerStore } from './player-store';
 import { ImportValidationError } from '../adapters/planner-import';
 import { CURRENT_SCHEMA_VERSION } from '../domain';
+import { getAllSnapshots, deleteSnapshot, getCompletedGoals, deleteCompletedGoal } from '../adapters/history-db';
 
 function loadFixtureRaw(name: string): string {
   return readFileSync(
@@ -12,8 +14,20 @@ function loadFixtureRaw(name: string): string {
   );
 }
 
+/** Fire-and-forget history writes settle on the next macrotask. */
+function flushHistoryWrites(): Promise<void> {
+  return new Promise((r) => setTimeout(r, 0));
+}
+
 beforeEach(() => {
   usePlayerStore.getState().reset();
+});
+
+afterEach(async () => {
+  const snapshots = await getAllSnapshots();
+  for (const s of snapshots) await deleteSnapshot(s.id);
+  const goals = await getCompletedGoals();
+  for (const g of goals) await deleteCompletedGoal(g.goalId);
 });
 
 describe('player-store initial state', () => {
@@ -168,6 +182,63 @@ describe('getSortedGoals', () => {
     const a = usePlayerStore.getState().getSortedGoals();
     const b = usePlayerStore.getState().getSortedGoals();
     expect(a).toBe(b);
+  });
+});
+
+describe('importFromJson history snapshots', () => {
+  it('should not create a snapshot on the first-ever import (nothing to preserve)', async () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+    await flushHistoryWrites();
+
+    expect(await getAllSnapshots()).toEqual([]);
+  });
+
+  it('should snapshot the previous state before a subsequent import overwrites it', async () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+    usePlayerStore.getState().importFromJson(raw);
+    await flushHistoryWrites();
+
+    const snapshots = await getAllSnapshots();
+    expect(snapshots).toHaveLength(1);
+    expect(snapshots[0].data.profile.username).toBe('TestUser');
+  });
+});
+
+describe('updateGoalStatus completed-goal history', () => {
+  it('should log a completed-goal entry when a goal is marked done', async () => {
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+    const goal = usePlayerStore.getState().getGoals()[0];
+
+    usePlayerStore.getState().updateGoalStatus(goal.id, 'done');
+    await flushHistoryWrites();
+
+    const entries = await getCompletedGoals();
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ goalId: goal.id, characterId: 'bellator', type: 'rank', target: 5 });
+  });
+
+  it('should not log an entry for transitions other than -> done', async () => {
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+    const goal = usePlayerStore.getState().getGoals()[0];
+
+    usePlayerStore.getState().updateGoalStatus(goal.id, 'paused');
+    await flushHistoryWrites();
+
+    expect(await getCompletedGoals()).toEqual([]);
+  });
+
+  it('should not log a duplicate entry when a goal already done is marked done again', async () => {
+    usePlayerStore.getState().addGoal({ characterId: 'bellator', type: 'rank', target: 5 });
+    const goal = usePlayerStore.getState().getGoals()[0];
+
+    usePlayerStore.getState().updateGoalStatus(goal.id, 'done');
+    await flushHistoryWrites();
+    usePlayerStore.getState().updateGoalStatus(goal.id, 'done');
+    await flushHistoryWrites();
+
+    expect(await getCompletedGoals()).toHaveLength(1);
   });
 });
 
