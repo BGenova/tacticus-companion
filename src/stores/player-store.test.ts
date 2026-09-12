@@ -296,6 +296,22 @@ describe('selectors', () => {
     expect(goals).toHaveLength(2);
   });
 
+  it('getLegendaryEvents should return an empty array when absent (e.g. JSON import)', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    expect(usePlayerStore.getState().getLegendaryEvents()).toEqual([]);
+  });
+
+  it('getLegendaryEvents should return the same array reference across calls when state has not changed', () => {
+    const raw = loadFixtureRaw('minimal-player.json');
+    usePlayerStore.getState().importFromJson(raw);
+
+    const a = usePlayerStore.getState().getLegendaryEvents();
+    const b = usePlayerStore.getState().getLegendaryEvents();
+    expect(a).toBe(b);
+  });
+
   it('getCharacterById should return the matching character', () => {
     const raw = loadFixtureRaw('minimal-player.json');
     usePlayerStore.getState().importFromJson(raw);

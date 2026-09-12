@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PlayerData, CharacterProgress, Goal, GoalType, GoalStatus, CampaignProgress, CharacterId } from '../domain';
+import type { PlayerData, CharacterProgress, Goal, GoalType, GoalStatus, CampaignProgress, CharacterId, LegendaryEventProgress } from '../domain';
 import {
   CURRENT_SCHEMA_VERSION,
   findCharacterById,
@@ -52,6 +52,9 @@ function memoizedGoalsForCharacter(): (goals: Goal[], characterId: CharacterId) 
 
 const getGoalsForCharacterValues = memoizedGoalsForCharacter();
 
+/** Stable identity for the "no legendary events" case (JSON imports, empty state). */
+const EMPTY_LEGENDARY_EVENTS: LegendaryEventProgress[] = [];
+
 const getSortedGoalsValues = (() => {
   let lastGoals: Goal[] | null = null;
   let lastResult: Goal[] = [];
@@ -94,6 +97,7 @@ export interface PlayerStore {
   getCharacterById: (id: CharacterId) => CharacterProgress | undefined;
   getGoalsForCharacter: (characterId: CharacterId) => Goal[];
   getSortedGoals: () => Goal[];
+  getLegendaryEvents: () => LegendaryEventProgress[];
 }
 
 export const usePlayerStore = create<PlayerStore>()(
@@ -179,6 +183,7 @@ export const usePlayerStore = create<PlayerStore>()(
       getCharacterById: (id) => findCharacterById(getCharactersValues(get().data.characters), id),
       getGoalsForCharacter: (characterId) => getGoalsForCharacterValues(get().data.goals, characterId),
       getSortedGoals: () => getSortedGoalsValues(get().data.goals),
+      getLegendaryEvents: () => get().data.legendaryEvents ?? EMPTY_LEGENDARY_EVENTS,
     }),
     {
       name: 'tacticus-player-data',
