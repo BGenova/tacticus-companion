@@ -7,8 +7,8 @@ const SAMPLE_PLAYER_DATA = JSON.stringify({
   schemaVersion: 1,
   profile: { username: 'TestUser' },
   characters: {
-    bellator: {
-      characterId: 'bellator',
+    ultraInceptorSgt: {
+      characterId: 'ultraInceptorSgt',
       rank: 3,
       rarity: 2,
       stars: 3,
@@ -24,7 +24,7 @@ const SAMPLE_PLAYER_DATA = JSON.stringify({
   inventory: { items: {} },
   campaigns: {},
   goals: [
-    { id: 'goal-1', characterId: 'bellator', type: 'rank', target: 5, priority: 1, status: 'active' },
+    { id: 'goal-1', characterId: 'ultraInceptorSgt', type: 'rank', target: 5, priority: 1, status: 'active' },
   ],
   updatedAt: '2026-09-10T18:30:00.000Z',
 });
@@ -62,7 +62,7 @@ export const AddGoal: Story = {
     usePlayerStore.getState().importFromJson(SAMPLE_PLAYER_DATA);
     const canvas = within(canvasElement);
 
-    await userEvent.selectOptions(canvas.getByLabelText('Personnage'), 'bellator');
+    await userEvent.selectOptions(canvas.getByLabelText('Personnage'), 'ultraInceptorSgt');
     await userEvent.selectOptions(canvas.getByLabelText("Type d'objectif"), 'rarity');
     await userEvent.type(canvas.getByPlaceholderText('Cible'), '4');
     await userEvent.click(canvas.getByRole('button', { name: 'Ajouter' }));

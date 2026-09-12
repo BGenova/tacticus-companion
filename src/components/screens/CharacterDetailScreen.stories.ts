@@ -7,8 +7,8 @@ const SAMPLE_PLAYER_DATA = JSON.stringify({
   schemaVersion: 1,
   profile: { username: 'TestUser' },
   characters: {
-    bellator: {
-      characterId: 'bellator',
+    ultraInceptorSgt: {
+      characterId: 'ultraInceptorSgt',
       rank: 3,
       rarity: 4,
       stars: 3,
@@ -24,7 +24,7 @@ const SAMPLE_PLAYER_DATA = JSON.stringify({
   inventory: { items: {} },
   campaigns: {},
   goals: [
-    { id: 'goal-1', characterId: 'bellator', type: 'rank', target: 5, priority: 1, status: 'active' },
+    { id: 'goal-1', characterId: 'ultraInceptorSgt', type: 'rank', target: 5, priority: 1, status: 'active' },
   ],
   updatedAt: '2026-09-10T18:30:00.000Z',
 });
@@ -33,7 +33,7 @@ const meta = {
   title: 'Screens/CharacterDetailScreen',
   component: CharacterDetailScreen,
   tags: ['autodocs'],
-  args: { characterId: 'bellator', onBack: () => {}, onGoToFarm: () => {} },
+  args: { characterId: 'ultraInceptorSgt', onBack: () => {}, onGoToFarm: () => {} },
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof CharacterDetailScreen>;
 

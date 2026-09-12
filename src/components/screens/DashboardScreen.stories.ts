@@ -62,8 +62,8 @@ export const WithNextGoal: Story = {
       schemaVersion: 1,
       profile: { username: 'TestUser', level: 47, powerRating: 125000 },
       characters: {
-        bellator: {
-          characterId: 'bellator', rank: 3, rarity: 2, stars: 3, level: 25, xp: 1200,
+        ultraInceptorSgt: {
+          characterId: 'ultraInceptorSgt', rank: 3, rarity: 2, stars: 3, level: 25, xp: 1200,
           shards: 45, mythicShards: 0, abilities: { active: 3, passive: 2 }, upgrades: [], equipment: [],
         },
       },
@@ -71,7 +71,7 @@ export const WithNextGoal: Story = {
       campaigns: {
         indomitus: { campaignId: 'indomitus', completedBattle: 30, totalBattles: 75, name: 'Indomitus', type: 'Standard' },
       },
-      goals: [{ id: 'goal-1', characterId: 'bellator', type: 'rank', target: 5, priority: 1, status: 'active' }],
+      goals: [{ id: 'goal-1', characterId: 'ultraInceptorSgt', type: 'rank', target: 5, priority: 1, status: 'active' }],
       updatedAt: '2026-09-10T18:30:00.000Z',
     }));
     const canvas = within(canvasElement);
@@ -79,7 +79,11 @@ export const WithNextGoal: Story = {
     await expect(canvas.getByText('Rang → 5', { exact: false })).toBeInTheDocument();
     await expect(canvas.getByText('TestUser')).toBeInTheDocument();
     await expect(canvas.getByText('Niveau 47 · Puissance 125 000', { exact: false })).toBeInTheDocument();
-    await expect(canvas.getByText('Indomitus')).toBeInTheDocument();
+    // "Indomitus" can now legitimately appear twice: once in the Campagnes
+    // progress card, and once more in Actions recommandées if the real
+    // rank-up data (Bellator now uses its real id) surfaces a campaign
+    // opportunity for the same campaign.
+    await expect((await canvas.findAllByText('Indomitus')).length).toBeGreaterThan(0);
     await expect(canvas.getByText('40% complétée', { exact: false })).toBeInTheDocument();
   },
 };
