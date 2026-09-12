@@ -49,7 +49,7 @@ src/
 - **Commits** : Conventional Commits — `feat(scope)`, `fix(scope)`, `refactor(scope)`, `test(scope)`, `docs`, `chore`.
 - **Scopes** : `domain`, `adapter`, `store`, `roster`, `goals`, `farming`, `ui`, `router`.
 
-## État actuel (Phase 5 complétée)
+## État actuel (Phase 7 en cours — Legendary Events)
 
 - ✅ Phase 0.2 : Modèle de domaine (`src/domain/`) : `CharacterProgress`, `Goal`, `CampaignProgress`, `PlayerData`
 - ✅ Phase 0.3 : Adapter d'import (Zod schema + normalisation + ImportValidationError)
@@ -66,6 +66,10 @@ src/
 - ✅ Phase 3 : Farming — liste de courses + nœuds recommandés pour les objectifs de rang, données de jeu réelles vendorisées depuis `svehera/tacticusplanner` (voir `13_FARMING_DATA_SOURCE.md`). Objectifs rareté/compétences pas encore couverts.
 - ✅ Phase 4 : Campaigns — nouvel écran `/campaigns`, progression par variante (Standard/Mirror/Elite/EliteMirror) groupée par nom, campagnes "rentables à pousser" détectées par recoupement avec la liste de courses (Phase 3). Personnages requis par nœud pas encore intégrés.
 - ✅ Phase 5 : History — snapshots de roster automatiques (IndexedDB via `idb`) à chaque import, diff snapshot vs état actuel, historique des objectifs terminés, statistiques de progression basiques.
+- 🔲 Phase 7 : Modes avancés (LRE, Guild Raid, Guild War, Machines of War, Team builder). En cours :
+  - ✅ Legendary Events — écran `/legendary-events`, progression par voie (points/objectifs/combats), depuis l'API réelle (`progress.legendaryEvents`). Pas de calcul de score optimal par combat (`battleConfigs` non modélisé, très verbeux).
+  - 🔲 Guild Raid / Guild War — nécessitent une clé API avec les scopes `Guild`/`Guild Raid` (la clé actuelle n'a que `Player`).
+  - 🔲 Machines of War, Team builder — pas commencés.
 - ✅ Dashboard entièrement connecté au store (plus aucune donnée mock) — `src/data/mock.ts` supprimé.
 
 ## Documentation
