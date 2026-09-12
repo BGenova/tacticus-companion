@@ -27,6 +27,10 @@ export async function fetchTacticusPlayer(apiKey: string): Promise<unknown> {
   try {
     response = await fetch(`${TACTICUS_API_BASE}/api/v1/player`, {
       headers: { 'X-API-KEY': apiKey },
+      // The API already caches server-side (see metaData.lastUpdatedOn in
+      // normalize.ts) — don't let the browser add a second, opaque layer of
+      // staleness on top of that.
+      cache: 'no-store',
     });
   } catch {
     throw new TacticusApiError("Impossible de contacter l'API Tacticus (réseau indisponible).");

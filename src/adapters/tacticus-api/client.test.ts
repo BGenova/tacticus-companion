@@ -26,6 +26,17 @@ describe('fetchTacticusPlayer', () => {
     );
   });
 
+  it('should bypass the browser HTTP cache (the API already caches server-side)', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, json: async () => ({ player: {} }) });
+
+    await fetchTacticusPlayer('my-api-key');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/player'),
+      expect.objectContaining({ cache: 'no-store' }),
+    );
+  });
+
   it('should return the parsed JSON body on success', async () => {
     stubFetch({ ok: true, status: 200, json: async () => ({ player: { details: { name: 'x' } } }) });
 

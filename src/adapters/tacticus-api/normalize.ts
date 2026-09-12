@@ -131,7 +131,7 @@ function flattenInventory(inventory: TacticusInventory): Record<string, number> 
  * planning), not something the game API exposes.
  */
 export function normalizeTacticusPlayer(response: TacticusPlayerResponse): PlayerData {
-  const { player } = response;
+  const { player, metaData } = response;
 
   const characters: Record<string, CharacterProgress> = {};
   for (const unit of player.units) {
@@ -153,7 +153,12 @@ export function normalizeTacticusPlayer(response: TacticusPlayerResponse): Playe
     inventory: { items: flattenInventory(player.inventory) },
     campaigns,
     goals: [],
-    updatedAt: new Date().toISOString(),
+    // The API caches player data server-side; lastUpdatedOn (when Snowprint's
+    // server actually refreshed it) is a more honest freshness indicator than
+    // "now" (when we happened to fetch a possibly-stale cached response).
+    updatedAt: metaData?.lastUpdatedOn !== undefined
+      ? new Date(metaData.lastUpdatedOn * 1000).toISOString()
+      : new Date().toISOString(),
   };
 }
 

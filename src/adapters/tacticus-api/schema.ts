@@ -81,8 +81,18 @@ export const tacticusPlayerSchema = z.object({
   }),
 });
 
+export const tacticusMetaDataSchema = z.object({
+  /**
+   * Unix timestamp (seconds) of when Snowprint's server last updated this
+   * player's data — the API caches responses, so this can be meaningfully
+   * older than "now". See 12_TACTICUS_API.md.
+   */
+  lastUpdatedOn: z.number().optional(),
+});
+
 export const tacticusPlayerResponseSchema = z.object({
   player: tacticusPlayerSchema,
+  metaData: tacticusMetaDataSchema.optional(),
 });
 
 export type TacticusUnit = z.infer<typeof tacticusUnitSchema>;
