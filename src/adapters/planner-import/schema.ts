@@ -44,6 +44,23 @@ export const campaignProgressSchema = z.object({
   type: z.string().optional(),
 });
 
+export const legendaryEventLaneProgressSchema = z.object({
+  laneId: z.number(),
+  laneName: z.string(),
+  encounterPoints: z.number(),
+  objectivesClearedCount: z.number(),
+  battlesTracked: z.number(),
+});
+
+export const legendaryEventProgressSchema = z.object({
+  characterId: z.string(),
+  currentPoints: z.number(),
+  currentCurrency: z.number(),
+  currentShards: z.number(),
+  currentClaimedChestIndex: z.number(),
+  lanes: z.array(legendaryEventLaneProgressSchema),
+});
+
 export const playerProfileSchema = z.object({
   username: z.string().optional(),
   level: z.number().optional(),
@@ -65,4 +82,5 @@ export const playerDataSchema = z.object({
   campaigns: z.record(z.string(), campaignProgressSchema),
   goals: z.array(goalSchema),
   updatedAt: z.string(),
+  legendaryEvents: z.array(legendaryEventProgressSchema).optional(),
 });

@@ -131,6 +131,31 @@ describe('normalizeImport', () => {
     expect(result.campaigns['indomitus'].totalBattles).toBeUndefined();
   });
 
+  it('should accept and preserve optional legendaryEvents (round-trip fidelity for API-imported data)', () => {
+    const input = loadFixture('minimal-player.json') as Record<string, unknown>;
+    const modified = {
+      ...input,
+      legendaryEvents: [
+        {
+          characterId: 'astarLysander',
+          currentPoints: 2013,
+          currentCurrency: 40,
+          currentShards: 100,
+          currentClaimedChestIndex: 4,
+          lanes: [{ laneId: 1, laneName: 'Alpha', encounterPoints: 222, objectivesClearedCount: 5, battlesTracked: 7 }],
+        },
+      ],
+    };
+    const result = normalizeImport(modified);
+    expect(result.legendaryEvents).toEqual(modified.legendaryEvents);
+  });
+
+  it('should leave legendaryEvents undefined when absent (JSON planner format never has it)', () => {
+    const input = loadFixture('minimal-player.json');
+    const result = normalizeImport(input);
+    expect(result.legendaryEvents).toBeUndefined();
+  });
+
   it('should throw for invalid goal status', () => {
     const input = loadFixture('minimal-player.json') as Record<string, unknown>;
     const modified = {

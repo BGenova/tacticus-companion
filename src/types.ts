@@ -2,4 +2,4 @@
 export type TagVariant = 'tag-accent' | 'tag-accent-2' | 'tag-outline' | 'tag-neutral';
 
 /** Écran actif de l'application. */
-export type Screen = 'dashboard' | 'roster' | 'character' | 'goals' | 'farm' | 'campaigns' | 'history' | 'settings';
+export type Screen = 'dashboard' | 'roster' | 'character' | 'goals' | 'farm' | 'campaigns' | 'history' | 'legendaryEvents' | 'settings';

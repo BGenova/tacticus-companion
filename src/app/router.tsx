@@ -6,6 +6,7 @@ import {
   FarmPlannerScreen,
   CampaignsScreen,
   HistoryScreen,
+  LegendaryEventsScreen,
   SettingsScreen,
 } from '../components/screens';
 import { RosterPage, CharacterDetailPage } from './navigate-helpers';
@@ -30,6 +31,10 @@ function HistoryPage() {
   return <HistoryScreen />;
 }
 
+function LegendaryEventsPage() {
+  return <LegendaryEventsScreen />;
+}
+
 function SettingsPage() {
   return <SettingsScreen />;
 }
@@ -46,6 +51,7 @@ export const router = createBrowserRouter([
       { path: 'farm', element: <FarmPlannerPage /> },
       { path: 'campaigns', element: <CampaignsPage /> },
       { path: 'history', element: <HistoryPage /> },
+      { path: 'legendary-events', element: <LegendaryEventsPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },
