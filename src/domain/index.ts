@@ -3,11 +3,11 @@ export { CURRENT_SCHEMA_VERSION } from './constants';
 export type { CharacterId, Equipment, Abilities, CharacterProgress } from './character';
 export type { GoalType, GoalStatus, Goal, GoalProgress } from './goal';
 export { calculateGoalProgress, sortGoalsByPriority } from './goal';
-export type { CampaignProgress } from './campaign';
-export { calculateCampaignProgress, getCampaignTypeLabel } from './campaign';
+export type { CampaignProgress, CampaignGroup, CampaignVariantProgress } from './campaign';
+export { calculateCampaignProgress, getCampaignTypeLabel, groupCampaignsByName } from './campaign';
 export type { PlayerProfile, Inventory, PlayerData } from './player-data';
-export type { MissingUpgrade, FarmNodeInfo, FarmNodeMatch, RankGoalInput } from './farming';
-export { getUpgradesForRankRange, calculateMissingUpgrades, findFarmNodesForUpgrade, calculateShoppingList } from './farming';
+export type { MissingUpgrade, FarmNodeInfo, FarmNodeMatch, RankGoalInput, CampaignOpportunity } from './farming';
+export { getUpgradesForRankRange, calculateMissingUpgrades, findFarmNodesForUpgrade, calculateShoppingList, findCampaignOpportunities } from './farming';
 export {
   getRarityLabel,
   getInitials,

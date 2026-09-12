@@ -100,4 +100,4 @@ export interface FarmNode {
 }
 
 /** Écran actif de l'application. */
-export type Screen = 'dashboard' | 'roster' | 'character' | 'goals' | 'farm' | 'settings';
+export type Screen = 'dashboard' | 'roster' | 'character' | 'goals' | 'farm' | 'campaigns' | 'settings';

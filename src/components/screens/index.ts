@@ -3,4 +3,5 @@ export { RosterScreen } from './RosterScreen';
 export { CharacterDetailScreen } from './CharacterDetailScreen';
 export { GoalsScreen } from './GoalsScreen';
 export { FarmPlannerScreen } from './FarmPlannerScreen';
+export { CampaignsScreen } from './CampaignsScreen';
 export { SettingsScreen } from './SettingsScreen';

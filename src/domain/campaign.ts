@@ -36,3 +36,39 @@ export function getCampaignTypeLabel(type: string | undefined): string {
   if (!type) return 'Campagne';
   return CAMPAIGN_TYPE_LABELS[type] ?? type;
 }
+
+/** A single variant's (Standard/Elite/Mirror/EliteMirror) progress within a campaign group. */
+export interface CampaignVariantProgress {
+  type: string;
+  progress: CampaignProgress;
+  pct: number | null;
+}
+
+/** All known variants of one campaign, grouped by human-readable name. */
+export interface CampaignGroup {
+  name: string;
+  variants: CampaignVariantProgress[];
+}
+
+/**
+ * Group campaign progress entries by name so Standard/Mirror/Elite/EliteMirror
+ * variants of the same campaign can be shown side by side.
+ */
+export function groupCampaignsByName(campaigns: CampaignProgress[]): CampaignGroup[] {
+  const groups = new Map<string, CampaignVariantProgress[]>();
+  for (const campaign of campaigns) {
+    const name = campaign.name ?? campaign.campaignId;
+    const variant: CampaignVariantProgress = {
+      type: campaign.type ?? 'Standard',
+      progress: campaign,
+      pct: calculateCampaignProgress(campaign),
+    };
+    const existing = groups.get(name);
+    if (existing) {
+      existing.push(variant);
+    } else {
+      groups.set(name, [variant]);
+    }
+  }
+  return Array.from(groups.entries()).map(([name, variants]) => ({ name, variants }));
+}

@@ -61,6 +61,15 @@ const NAV_ENTRIES: NavEntry[] = [
     ),
   },
   {
+    screen: 'campaigns',
+    label: 'Campaigns',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 21V8l8-5 8 5v13M4 21h16M9 21v-6h6v6" />
+      </svg>
+    ),
+  },
+  {
     screen: 'settings',
     label: 'Settings',
     icon: (

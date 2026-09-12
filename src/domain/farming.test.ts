@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { getUpgradesForRankRange, calculateMissingUpgrades, findFarmNodesForUpgrade, calculateShoppingList } from './farming';
+import { getUpgradesForRankRange, calculateMissingUpgrades, findFarmNodesForUpgrade, calculateShoppingList, findCampaignOpportunities } from './farming';
 import type { FarmNodeInfo, RankGoalInput } from './farming';
+import type { CampaignProgress } from './campaign';
 
 const TIER_NAMES = ['Stone I', 'Stone II', 'Stone III', 'Iron I', 'Iron II'] as const;
 
@@ -123,5 +124,50 @@ describe('calculateShoppingList', () => {
   it('should treat a character with no known rank-up data as needing nothing', () => {
     const goals: RankGoalInput[] = [{ characterId: 'unknown-char', currentRank: 0, targetRank: 1 }];
     expect(calculateShoppingList(goals, TIER_NAMES, rankUpgradesByCharacter, {})).toEqual([]);
+  });
+});
+
+describe('findCampaignOpportunities', () => {
+  const farmNodes: Record<string, FarmNodeInfo> = {
+    node10: { campaign: 'Indomitus', nodeNumber: 10, energyCost: 6, guaranteed: [{ id: 'upgA' }], potential: [] },
+    node20: { campaign: 'Indomitus', nodeNumber: 20, energyCost: 6, guaranteed: [{ id: 'upgZ' }], potential: [] },
+    node5: { campaign: 'Indomitus', nodeNumber: 5, energyCost: 6, guaranteed: [{ id: 'upgA' }], potential: [] },
+    nodeOther: { campaign: 'Cadia', nodeNumber: 3, energyCost: 5, guaranteed: [{ id: 'upgA' }], potential: [] },
+  };
+
+  it('should flag a campaign with an unreached node dropping a needed upgrade', () => {
+    const campaigns: CampaignProgress[] = [
+      { campaignId: 'c1', name: 'Indomitus', completedBattle: 8, totalBattles: 75 },
+    ];
+    const result = findCampaignOpportunities(campaigns, ['upgA'], farmNodes);
+    expect(result).toEqual([{ campaignName: 'Indomitus', nextNodeNumber: 10, upgradeIds: ['upgA'] }]);
+  });
+
+  it('should ignore nodes already reached (nodeNumber <= completedBattle)', () => {
+    const campaigns: CampaignProgress[] = [
+      { campaignId: 'c1', name: 'Indomitus', completedBattle: 15, totalBattles: 75 },
+    ];
+    // node10 and node5 are both behind progress 15; only node20 (upgZ) is ahead, but upgZ isn't needed.
+    const result = findCampaignOpportunities(campaigns, ['upgA'], farmNodes);
+    expect(result).toEqual([]);
+  });
+
+  it('should skip campaigns that are already fully completed', () => {
+    const campaigns: CampaignProgress[] = [
+      { campaignId: 'c1', name: 'Indomitus', completedBattle: 75, totalBattles: 75 },
+    ];
+    expect(findCampaignOpportunities(campaigns, ['upgA'], farmNodes)).toEqual([]);
+  });
+
+  it('should skip campaigns with unknown totalBattles (cannot tell what is left to unlock)', () => {
+    const campaigns: CampaignProgress[] = [{ campaignId: 'c1', name: 'Indomitus', completedBattle: 8 }];
+    expect(findCampaignOpportunities(campaigns, ['upgA'], farmNodes)).toEqual([]);
+  });
+
+  it('should return an empty array when nothing is needed', () => {
+    const campaigns: CampaignProgress[] = [
+      { campaignId: 'c1', name: 'Indomitus', completedBattle: 8, totalBattles: 75 },
+    ];
+    expect(findCampaignOpportunities(campaigns, [], farmNodes)).toEqual([]);
   });
 });

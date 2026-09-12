@@ -7,6 +7,7 @@ const ROUTE_TO_SCREEN: Record<string, Screen> = {
   '/roster': 'roster',
   '/goals': 'goals',
   '/farm': 'farm',
+  '/campaigns': 'campaigns',
   '/settings': 'settings',
 };
 
@@ -16,6 +17,7 @@ const SCREEN_TO_ROUTE: Record<Screen, string> = {
   character: '/roster',
   goals: '/goals',
   farm: '/farm',
+  campaigns: '/campaigns',
   settings: '/settings',
 };
 
