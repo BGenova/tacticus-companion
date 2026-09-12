@@ -1,18 +1,10 @@
 import { usePlayerStore } from '../../stores/player-store';
-import { calculateShoppingList, findFarmNodesForUpgrade, findCharacterById } from '../../domain';
-import type { RankGoalInput } from '../../domain';
+import { calculateShoppingList, buildRankGoalInputs, recommendFarmNodes } from '../../domain';
 import { RANK_TIER_NAMES, RANK_UP_UPGRADES } from '../../data/static/rank-up-upgrades';
 import { UPGRADE_MATERIALS } from '../../data/static/upgrade-materials';
 import { FARM_NODES } from '../../data/static/farm-nodes';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Tag } from '../ui/Tag';
-
-interface RecommendedNode {
-  campaign: string;
-  nodeNumber: number;
-  energyCost: number;
-  upgradeNames: string[];
-}
 
 /**
  * Écran « Farm Planner » : liste de courses (upgrades manquants pour les
@@ -26,30 +18,9 @@ export function FarmPlannerScreen() {
   const characters = usePlayerStore((s) => s.getCharacters());
   const inventoryItems = usePlayerStore((s) => s.data.inventory.items);
 
-  const rankGoalInputs: RankGoalInput[] = [];
-  for (const goal of goals) {
-    if (goal.status !== 'active' || goal.type !== 'rank') continue;
-    const character = findCharacterById(characters, goal.characterId);
-    if (!character) continue;
-    rankGoalInputs.push({ characterId: goal.characterId, currentRank: character.rank, targetRank: goal.target });
-  }
-
+  const rankGoalInputs = buildRankGoalInputs(goals, characters);
   const shoppingList = calculateShoppingList(rankGoalInputs, RANK_TIER_NAMES, RANK_UP_UPGRADES, inventoryItems);
-
-  const nodesByCampaign = new Map<string, RecommendedNode>();
-  for (const item of shoppingList) {
-    const best = findFarmNodesForUpgrade(item.upgradeId, FARM_NODES)[0];
-    if (!best) continue;
-    const key = `${best.campaign}-${best.nodeNumber}`;
-    const materialName = UPGRADE_MATERIALS[item.upgradeId]?.material ?? item.upgradeId;
-    const existing = nodesByCampaign.get(key);
-    if (existing) {
-      existing.upgradeNames.push(materialName);
-    } else {
-      nodesByCampaign.set(key, { campaign: best.campaign, nodeNumber: best.nodeNumber, energyCost: best.energyCost, upgradeNames: [materialName] });
-    }
-  }
-  const recommendedNodes = Array.from(nodesByCampaign.values());
+  const recommendedNodes = recommendFarmNodes(shoppingList.map((u) => u.upgradeId), FARM_NODES);
   const totalEnergy = recommendedNodes.reduce((sum, n) => sum + n.energyCost, 0);
 
   return (
@@ -105,7 +76,7 @@ export function FarmPlannerScreen() {
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 'var(--space-4)' }}>
                 {recommendedNodes.map((n) => (
-                  <div key={`${n.campaign}-${n.nodeNumber}`} className="card elev-sm">
+                  <div key={n.nodeId} className="card elev-sm">
                     <div className="card-kicker">{n.campaign}</div>
                     <div className="card-title" style={{ fontSize: 16 }}>Nœud {n.nodeNumber}</div>
                     <div className="card-meta">
@@ -115,8 +86,8 @@ export function FarmPlannerScreen() {
                       <span>{n.energyCost} énergie</span>
                     </div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
-                      {n.upgradeNames.map((name) => (
-                        <Tag key={name} variant="tag-neutral">{name}</Tag>
+                      {n.upgradeIds.map((id) => (
+                        <Tag key={id} variant="tag-neutral">{UPGRADE_MATERIALS[id]?.material ?? id}</Tag>
                       ))}
                     </div>
                   </div>
