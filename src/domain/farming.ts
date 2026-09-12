@@ -1,3 +1,5 @@
+import type { CampaignProgress } from './campaign';
+
 /** A single upgrade material still needed to reach a goal, tallied against inventory stock. */
 export interface MissingUpgrade {
   upgradeId: string;
@@ -105,4 +107,50 @@ export function findFarmNodesForUpgrade(
     }
   }
   return matches.sort((a, b) => a.energyCost - b.energyCost);
+}
+
+export interface CampaignOpportunity {
+  campaignName: string;
+  /** Nearest not-yet-reached node number that drops a needed upgrade. */
+  nextNodeNumber: number;
+  /** Which needed upgrades that node (or nodes at/after it) can drop. */
+  upgradeIds: string[];
+}
+
+/**
+ * Identify in-progress campaigns worth pushing further: ones with an
+ * unreached node (nodeNumber > completedBattle) that drops something on the
+ * shopping list. Campaigns already fully cleared, or with an unknown
+ * totalBattles (so we can't tell what's left to unlock), are skipped.
+ */
+export function findCampaignOpportunities(
+  campaigns: CampaignProgress[],
+  neededUpgradeIds: string[],
+  farmNodes: Record<string, FarmNodeInfo>,
+): CampaignOpportunity[] {
+  const neededSet = new Set(neededUpgradeIds);
+  const byCampaignName = new Map<string, { nextNodeNumber: number; upgradeIds: Set<string> }>();
+
+  for (const campaign of campaigns) {
+    if (!campaign.name || !campaign.totalBattles) continue;
+    if (campaign.completedBattle >= campaign.totalBattles) continue;
+
+    for (const node of Object.values(farmNodes)) {
+      if (node.campaign !== campaign.name || node.nodeNumber <= campaign.completedBattle) continue;
+
+      const drops = [...node.guaranteed.map((r) => r.id), ...node.potential.map((r) => r.id)].filter((id) => neededSet.has(id));
+      if (drops.length === 0) continue;
+
+      const entry = byCampaignName.get(campaign.name) ?? { nextNodeNumber: Infinity, upgradeIds: new Set<string>() };
+      entry.nextNodeNumber = Math.min(entry.nextNodeNumber, node.nodeNumber);
+      for (const id of drops) entry.upgradeIds.add(id);
+      byCampaignName.set(campaign.name, entry);
+    }
+  }
+
+  return Array.from(byCampaignName.entries()).map(([campaignName, v]) => ({
+    campaignName,
+    nextNodeNumber: v.nextNodeNumber,
+    upgradeIds: Array.from(v.upgradeIds),
+  }));
 }

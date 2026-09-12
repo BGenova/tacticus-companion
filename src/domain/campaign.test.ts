@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateCampaignProgress, getCampaignTypeLabel } from './campaign';
+import { calculateCampaignProgress, getCampaignTypeLabel, groupCampaignsByName } from './campaign';
 import type { CampaignProgress } from './campaign';
 
 function makeCampaign(overrides: Partial<CampaignProgress> = {}): CampaignProgress {
@@ -55,5 +55,42 @@ describe('getCampaignTypeLabel', () => {
 
   it('should return a generic fallback when type is undefined', () => {
     expect(getCampaignTypeLabel(undefined)).toBe('Campagne');
+  });
+});
+
+describe('groupCampaignsByName', () => {
+  it('should group campaign progress entries sharing the same name', () => {
+    const campaigns: CampaignProgress[] = [
+      { campaignId: 'c1', name: 'Fall of Cadia', type: 'Standard', completedBattle: 10, totalBattles: 75 },
+      { campaignId: 'c2', name: 'Fall of Cadia', type: 'Elite', completedBattle: 2, totalBattles: 50 },
+      { campaignId: 'c3', name: 'Indomitus', type: 'Standard', completedBattle: 5, totalBattles: 75 },
+    ];
+    const groups = groupCampaignsByName(campaigns);
+    expect(groups).toHaveLength(2);
+    const cadia = groups.find((g) => g.name === 'Fall of Cadia');
+    expect(cadia?.variants).toHaveLength(2);
+    expect(cadia?.variants.map((v) => v.type).sort()).toEqual(['Elite', 'Standard']);
+  });
+
+  it('should fall back to campaignId when name is unknown', () => {
+    const campaigns: CampaignProgress[] = [{ campaignId: 'raw-id', completedBattle: 1 }];
+    const groups = groupCampaignsByName(campaigns);
+    expect(groups[0].name).toBe('raw-id');
+  });
+
+  it('should default missing type to Standard', () => {
+    const campaigns: CampaignProgress[] = [{ campaignId: 'c1', name: 'X', completedBattle: 1 }];
+    const groups = groupCampaignsByName(campaigns);
+    expect(groups[0].variants[0].type).toBe('Standard');
+  });
+
+  it('should include computed pct per variant', () => {
+    const campaigns: CampaignProgress[] = [{ campaignId: 'c1', name: 'X', completedBattle: 30, totalBattles: 75 }];
+    const groups = groupCampaignsByName(campaigns);
+    expect(groups[0].variants[0].pct).toBe(40);
+  });
+
+  it('should return an empty array for no campaigns', () => {
+    expect(groupCampaignsByName([])).toEqual([]);
   });
 });
