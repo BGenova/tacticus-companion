@@ -1,14 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 import { DashboardScreen } from './DashboardScreen';
-import { ACTIONS } from '../../data/mock';
 import { usePlayerStore } from '../../stores/player-store';
 
 const meta = {
   title: 'Screens/DashboardScreen',
   component: DashboardScreen,
   tags: ['autodocs'],
-  args: { actions: ACTIONS },
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof DashboardScreen>;
 
@@ -22,6 +20,38 @@ export const Default: Story = {
     await expect(await canvas.findByText('Aucun objectif actif — créez-en un depuis l\'écran Goals.')).toBeInTheDocument();
     await expect(canvas.getByText('Importez vos données depuis Settings pour voir votre profil.')).toBeInTheDocument();
     await expect(canvas.getByText('Aucune campagne importée.')).toBeInTheDocument();
+    await expect(canvas.getByText('Rien ne bloque vos objectifs de rang actifs.')).toBeInTheDocument();
+    await expect(canvas.getByText("Rien à farmer aujourd'hui pour vos objectifs actifs.")).toBeInTheDocument();
+    await expect(canvas.getByText('Aucune action recommandée pour le moment.')).toBeInTheDocument();
+  },
+};
+
+// ultraEliminatorSgt rank goal (Stone I -> Stone II) needs 6 upgrades none of
+// which are owned; verified against the vendored dataset (same fixture as
+// FarmPlannerScreen/CampaignsScreen stories).
+export const WithRealFarmingData: Story = {
+  play: async ({ canvasElement }) => {
+    usePlayerStore.getState().reset();
+    usePlayerStore.getState().importFromJson(JSON.stringify({
+      schemaVersion: 1,
+      profile: { username: 'TestUser' },
+      characters: {
+        ultraEliminatorSgt: {
+          characterId: 'ultraEliminatorSgt', rank: 0, rarity: 1, stars: 1, level: 5, xp: 100,
+          shards: 0, mythicShards: 0, abilities: { active: 1, passive: 1 }, upgrades: [], equipment: [],
+        },
+      },
+      inventory: { items: {} },
+      campaigns: {
+        indomitus: { campaignId: 'indomitus', name: 'Indomitus', type: 'Standard', completedBattle: 8, totalBattles: 75 },
+      },
+      goals: [{ id: 'goal-1', characterId: 'ultraEliminatorSgt', type: 'rank', target: 1, priority: 1, status: 'active' }],
+      updatedAt: '2026-09-12T00:00:00.000Z',
+    }));
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Lesser Reliquary of Protection')).toBeInTheDocument();
+    await expect(canvas.getByText('Nœud 33', { exact: false })).toBeInTheDocument();
+    await expect(canvas.getByText('Palier 32', { exact: false })).toBeInTheDocument();
   },
 };
 

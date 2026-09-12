@@ -8,8 +8,16 @@ export { calculateCampaignProgress, getCampaignTypeLabel, groupCampaignsByName }
 export type { PlayerProfile, Inventory, PlayerData } from './player-data';
 export type { RosterSnapshot, CompletedGoalEntry, CharacterDiff, RosterDiff, ProgressionStats } from './history';
 export { diffRosterSnapshots, calculateProgressionStats } from './history';
-export type { MissingUpgrade, FarmNodeInfo, FarmNodeMatch, RankGoalInput, CampaignOpportunity } from './farming';
-export { getUpgradesForRankRange, calculateMissingUpgrades, findFarmNodesForUpgrade, calculateShoppingList, findCampaignOpportunities } from './farming';
+export type { MissingUpgrade, FarmNodeInfo, FarmNodeMatch, RankGoalInput, CampaignOpportunity, RecommendedFarmNode } from './farming';
+export {
+  getUpgradesForRankRange,
+  calculateMissingUpgrades,
+  findFarmNodesForUpgrade,
+  calculateShoppingList,
+  findCampaignOpportunities,
+  buildRankGoalInputs,
+  recommendFarmNodes,
+} from './farming';
 export {
   getRarityLabel,
   getInitials,

@@ -1,7 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { getUpgradesForRankRange, calculateMissingUpgrades, findFarmNodesForUpgrade, calculateShoppingList, findCampaignOpportunities } from './farming';
+import {
+  getUpgradesForRankRange,
+  calculateMissingUpgrades,
+  findFarmNodesForUpgrade,
+  calculateShoppingList,
+  findCampaignOpportunities,
+  buildRankGoalInputs,
+  recommendFarmNodes,
+} from './farming';
 import type { FarmNodeInfo, RankGoalInput } from './farming';
 import type { CampaignProgress } from './campaign';
+import type { Goal } from './goal';
+import type { CharacterProgress } from './character';
 
 const TIER_NAMES = ['Stone I', 'Stone II', 'Stone III', 'Iron I', 'Iron II'] as const;
 
@@ -169,5 +179,71 @@ describe('findCampaignOpportunities', () => {
       { campaignId: 'c1', name: 'Indomitus', completedBattle: 8, totalBattles: 75 },
     ];
     expect(findCampaignOpportunities(campaigns, [], farmNodes)).toEqual([]);
+  });
+});
+
+describe('buildRankGoalInputs', () => {
+  function makeCharacter(overrides: Partial<CharacterProgress> = {}): CharacterProgress {
+    return {
+      characterId: 'bellator', rank: 3, rarity: 2, stars: 3, level: 25, xp: 1200,
+      shards: 45, mythicShards: 0, abilities: { active: 3, passive: 2 }, upgrades: [], equipment: [],
+      ...overrides,
+    };
+  }
+  function makeGoal(overrides: Partial<Goal> = {}): Goal {
+    return { id: 'g1', characterId: 'bellator', type: 'rank', target: 5, priority: 1, status: 'active', ...overrides };
+  }
+
+  it('should build an input for each active rank goal with a known character', () => {
+    const characters = [makeCharacter({ rank: 3 })];
+    const result = buildRankGoalInputs([makeGoal({ target: 5 })], characters);
+    expect(result).toEqual([{ characterId: 'bellator', currentRank: 3, targetRank: 5 }]);
+  });
+
+  it('should skip paused or done goals', () => {
+    const characters = [makeCharacter()];
+    const result = buildRankGoalInputs(
+      [makeGoal({ status: 'paused' }), makeGoal({ id: 'g2', status: 'done' })],
+      characters,
+    );
+    expect(result).toEqual([]);
+  });
+
+  it('should skip goals of a type other than rank', () => {
+    const characters = [makeCharacter()];
+    expect(buildRankGoalInputs([makeGoal({ type: 'rarity' })], characters)).toEqual([]);
+  });
+
+  it('should skip goals for a character not present in the roster', () => {
+    expect(buildRankGoalInputs([makeGoal()], [])).toEqual([]);
+  });
+});
+
+describe('recommendFarmNodes', () => {
+  const farmNodes: Record<string, FarmNodeInfo> = {
+    node1: { campaign: 'Indomitus', nodeNumber: 3, energyCost: 6, guaranteed: [{ id: 'upgA' }], potential: [] },
+    node2: { campaign: 'Indomitus', nodeNumber: 5, energyCost: 8, guaranteed: [{ id: 'upgB' }], potential: [] },
+  };
+
+  it('should group needed upgrades by their cheapest node', () => {
+    const result = recommendFarmNodes(['upgA', 'upgB'], farmNodes);
+    expect(result).toHaveLength(2);
+  });
+
+  it('should combine upgrades that share the same best node', () => {
+    const sharedNodes: Record<string, FarmNodeInfo> = {
+      node1: { campaign: 'Indomitus', nodeNumber: 3, energyCost: 6, guaranteed: [{ id: 'upgA' }, { id: 'upgB' }], potential: [] },
+    };
+    const result = recommendFarmNodes(['upgA', 'upgB'], sharedNodes);
+    expect(result).toHaveLength(1);
+    expect(result[0].upgradeIds.sort()).toEqual(['upgA', 'upgB']);
+  });
+
+  it('should skip upgrades with no matching node', () => {
+    expect(recommendFarmNodes(['unknown'], farmNodes)).toEqual([]);
+  });
+
+  it('should return an empty array for no needed upgrades', () => {
+    expect(recommendFarmNodes([], farmNodes)).toEqual([]);
   });
 });

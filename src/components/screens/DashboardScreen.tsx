@@ -1,29 +1,37 @@
-import type { RecommendedAction } from '../../types';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Tag } from '../ui/Tag';
 import { usePlayerStore } from '../../stores/player-store';
-import { calculateGoalProgress, getGoalTypeLabel, findCharacterById, calculateCampaignProgress, getCampaignTypeLabel } from '../../domain';
+import {
+  calculateGoalProgress,
+  getGoalTypeLabel,
+  findCharacterById,
+  calculateCampaignProgress,
+  getCampaignTypeLabel,
+  buildRankGoalInputs,
+  calculateShoppingList,
+  recommendFarmNodes,
+  findCampaignOpportunities,
+} from '../../domain';
 import { getCharacterInfo } from '../../data/static/characters';
-
-/** Props du composant {@link DashboardScreen}. */
-export interface DashboardScreenProps {
-  /** Actions recommandées. */
-  actions: RecommendedAction[];
-}
+import { RANK_TIER_NAMES, RANK_UP_UPGRADES } from '../../data/static/rank-up-upgrades';
+import { UPGRADE_MATERIALS } from '../../data/static/upgrade-materials';
+import { FARM_NODES } from '../../data/static/farm-nodes';
 
 const NEXT_GOALS_LIMIT = 3;
+const DASHBOARD_ITEM_LIMIT = 2;
 
 /**
- * Écran principal « Tableau de bord » affichant la progression du compte,
- * les blocages, le farm du jour, les campagnes et les actions recommandées.
- *
- * @param props - {@link DashboardScreenProps}
+ * Écran principal « Tableau de bord » : progression du compte, prochains
+ * objectifs, blocages, farm du jour et campagnes rentables — tout dérivé des
+ * données réelles du store (objectifs de rang uniquement pour les blocages/
+ * farm/actions, voir 10_IMPLEMENTATION_PLAN.md).
  */
-export function DashboardScreen({ actions }: DashboardScreenProps) {
+export function DashboardScreen() {
   const characters = usePlayerStore((s) => s.getCharacters());
   const goals = usePlayerStore((s) => s.getSortedGoals());
   const profile = usePlayerStore((s) => s.data.profile);
   const campaigns = usePlayerStore((s) => s.getCampaigns());
+  const inventoryItems = usePlayerStore((s) => s.data.inventory.items);
 
   const nextGoals = goals
     .filter((g) => g.status === 'active')
@@ -39,6 +47,12 @@ export function DashboardScreen({ actions }: DashboardScreenProps) {
         pct: progress.pct,
       };
     });
+
+  const rankGoalInputs = buildRankGoalInputs(goals, characters);
+  const shoppingList = calculateShoppingList(rankGoalInputs, RANK_TIER_NAMES, RANK_UP_UPGRADES, inventoryItems);
+  const topBlockers = [...shoppingList].sort((a, b) => b.missing - a.missing).slice(0, DASHBOARD_ITEM_LIMIT);
+  const nodesToFarm = recommendFarmNodes(shoppingList.map((u) => u.upgradeId), FARM_NODES).slice(0, DASHBOARD_ITEM_LIMIT);
+  const opportunities = findCampaignOpportunities(campaigns, shoppingList.map((u) => u.upgradeId), FARM_NODES).slice(0, DASHBOARD_ITEM_LIMIT);
 
   return (
     <div>
@@ -90,42 +104,40 @@ export function DashboardScreen({ actions }: DashboardScreenProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
         <div className="card elev-sm">
           <div className="card-kicker">Ce qui bloque</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-              <div>
-                <div style={{ fontSize: 14 }}>Shards violet — Kael Ironvow</div>
-                <div className="card-meta">Manque 64 pour le prochain palier</div>
-              </div>
-              <span className="tag tag-outline">Bloquant</span>
+          {topBlockers.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-1)' }}>
+              {topBlockers.map((item) => (
+                <div key={item.upgradeId} style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+                  <div>
+                    <div style={{ fontSize: 14 }}>{UPGRADE_MATERIALS[item.upgradeId]?.material ?? item.upgradeId}</div>
+                    <div className="card-meta">Manque {item.missing} pour vos objectifs de rang</div>
+                  </div>
+                  <span className="tag tag-outline">Bloquant</span>
+                </div>
+              ))}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-              <div>
-                <div style={{ fontSize: 14 }}>Or insuffisant</div>
-                <div className="card-meta">Manque 15 000 pour la montée de rang</div>
-              </div>
-              <span className="tag tag-outline">Bloquant</span>
-            </div>
-          </div>
+          ) : (
+            <p className="card-body">Rien ne bloque vos objectifs de rang actifs.</p>
+          )}
         </div>
 
         <div className="card elev-sm">
           <div className="card-kicker">À farmer aujourd'hui</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-              <div>
-                <div style={{ fontSize: 14 }}>Nœud 9-3 — Campagne Écarlate</div>
-                <div className="card-meta">6 énergie · goutte élevée</div>
-              </div>
-              <span className="tag tag-neutral">3 essais</span>
+          {nodesToFarm.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-1)' }}>
+              {nodesToFarm.map((n) => (
+                <div key={n.nodeId} style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+                  <div>
+                    <div style={{ fontSize: 14 }}>Nœud {n.nodeNumber} — {n.campaign}</div>
+                    <div className="card-meta">{n.energyCost} énergie</div>
+                  </div>
+                  <span className="tag tag-neutral">{n.upgradeIds.length} composant(s)</span>
+                </div>
+              ))}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-              <div>
-                <div style={{ fontSize: 14 }}>Nœud 6-1 — Culte du Vide</div>
-                <div className="card-meta">5 énergie · goutte élevée</div>
-              </div>
-              <span className="tag tag-neutral">2 essais</span>
-            </div>
-          </div>
+          ) : (
+            <p className="card-body">Rien à farmer aujourd'hui pour vos objectifs actifs.</p>
+          )}
         </div>
       </div>
 
@@ -157,16 +169,22 @@ export function DashboardScreen({ actions }: DashboardScreenProps) {
 
       {/* Actions recommandées */}
       <h3 style={{ marginBottom: 'var(--space-3)' }}>Actions recommandées</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 'var(--space-4)' }}>
-        {actions.map((act) => (
-          <div key={act.title} className="card elev-sm">
-            <div className="card-kicker">{act.impact}</div>
-            <div className="card-title" style={{ fontSize: 16 }}>{act.title}</div>
-            <p className="card-body">{act.reason}</p>
-            <div className="card-meta">Coût : {act.cost}</div>
-          </div>
-        ))}
-      </div>
+      {opportunities.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 'var(--space-4)' }}>
+          {opportunities.map((o) => (
+            <div key={o.campaignName} className="card elev-sm">
+              <div className="card-kicker">Campagne rentable</div>
+              <div className="card-title" style={{ fontSize: 16 }}>{o.campaignName}</div>
+              <p className="card-body">
+                Débloque {o.upgradeIds.map((id) => UPGRADE_MATERIALS[id]?.material ?? id).join(', ')}
+              </p>
+              <div className="card-meta">Palier {o.nextNodeNumber}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="card-body">Aucune action recommandée pour le moment.</p>
+      )}
     </div>
   );
 }

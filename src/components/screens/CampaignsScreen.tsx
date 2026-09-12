@@ -4,6 +4,7 @@ import {
   getCampaignTypeLabel,
   calculateShoppingList,
   findCampaignOpportunities,
+  buildRankGoalInputs,
 } from '../../domain';
 import { RANK_TIER_NAMES, RANK_UP_UPGRADES } from '../../data/static/rank-up-upgrades';
 import { UPGRADE_MATERIALS } from '../../data/static/upgrade-materials';
@@ -24,13 +25,7 @@ export function CampaignsScreen() {
 
   const groups = groupCampaignsByName(campaigns);
 
-  const rankGoalInputs = goals
-    .filter((g) => g.status === 'active' && g.type === 'rank')
-    .map((g) => {
-      const character = characters.find((c) => c.characterId === g.characterId);
-      return character ? { characterId: g.characterId, currentRank: character.rank, targetRank: g.target } : null;
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+  const rankGoalInputs = buildRankGoalInputs(goals, characters);
 
   const shoppingList = calculateShoppingList(rankGoalInputs, RANK_TIER_NAMES, RANK_UP_UPGRADES, inventoryItems);
   const opportunities = findCampaignOpportunities(campaigns, shoppingList.map((u) => u.upgradeId), FARM_NODES);
