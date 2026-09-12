@@ -280,6 +280,9 @@ export function SettingsScreen() {
                 <p className="card-body" style={{ marginBottom: 'var(--space-2)' }}>
                   {apiImportStatus.characterCount} personnage(s), {apiImportStatus.campaignCount} campagne(s) trouvés.
                 </p>
+                <p className="card-meta" style={{ marginBottom: 'var(--space-2)' }}>
+                  Données à jour au {new Date(apiImportStatus.playerData.updatedAt).toLocaleString('fr-FR')} — l'API Tacticus met ses réponses en cache côté serveur, ce qui peut retarder la prise en compte d'une action récente en jeu.
+                </p>
                 <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                   <button type="button" className="btn btn-primary" onClick={handleConfirmApiImport}>
                     Confirmer l'import

@@ -156,6 +156,20 @@ describe('normalizeTacticusPlayer', () => {
     const result = normalizeTacticusPlayer(validateTacticusResponse(response));
     expect(result.characters).toEqual({});
   });
+
+  it('should use metaData.lastUpdatedOn as updatedAt (server-side cache freshness, not import time)', () => {
+    const response = makeApiResponse({ metaData: { lastUpdatedOn: 1_700_000_000 } });
+    const result = normalizeTacticusPlayer(validateTacticusResponse(response));
+    expect(result.updatedAt).toBe(new Date(1_700_000_000 * 1000).toISOString());
+  });
+
+  it('should fall back to the current time when metaData.lastUpdatedOn is absent', () => {
+    const before = Date.now();
+    const result = normalizeTacticusPlayer(validateTacticusResponse(makeApiResponse()));
+    const parsed = new Date(result.updatedAt).getTime();
+    expect(parsed).toBeGreaterThanOrEqual(before);
+    expect(parsed).toBeLessThanOrEqual(Date.now());
+  });
 });
 
 describe('importTacticusPlayerData', () => {
