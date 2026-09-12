@@ -4,4 +4,5 @@ export { CharacterDetailScreen } from './CharacterDetailScreen';
 export { GoalsScreen } from './GoalsScreen';
 export { FarmPlannerScreen } from './FarmPlannerScreen';
 export { CampaignsScreen } from './CampaignsScreen';
+export { HistoryScreen } from './HistoryScreen';
 export { SettingsScreen } from './SettingsScreen';
