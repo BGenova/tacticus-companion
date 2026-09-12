@@ -7,6 +7,7 @@ import {
   type TacticusCampaignProgress,
   type TacticusInventory,
 } from './schema';
+import { FARM_NODES } from '../../data/static/farm-nodes';
 
 export class TacticusImportValidationError extends Error {
   public readonly issues: string[];
@@ -85,21 +86,52 @@ function normalizeUnit(unit: TacticusUnit): CharacterProgress {
 }
 
 /**
- * The API doesn't expose an explicit "completed" flag per battle, only
- * attemptsLeft/attemptsUsed. We treat a battle as cleared once the player has
- * engaged it (attemptsUsed > 0), and count those as the completed-battle
- * total. Campaigns are sequential in-game, so this should track furthest
- * progress; unverified against a real account with partial campaign gaps.
+ * Some campaign names differ between the official API and the vendored
+ * community dataset (farm-nodes.ts). Confirmed by comparing a real account's
+ * API response against the vendored data on 2026-09-12.
+ */
+const CAMPAIGN_NAME_ALIASES: Record<string, string> = {
+  'Saim-Hainn': 'Saim-Hann',
+};
+
+/**
+ * The true total battle count for a campaign, from the vendored (player-
+ * independent) node dataset — the live API's own battles array only lists
+ * stages the player has unlocked so far, so its length varies with progress
+ * and undercounts the true total for any campaign not yet fully unlocked
+ * (confirmed on a real account: e.g. Octarius returned 66 entries, Saim-Hann
+ * 51, while the vendored data shows every Standard campaign has 75).
+ */
+function getCampaignTotalBattles(campaignName: string): number | undefined {
+  const name = CAMPAIGN_NAME_ALIASES[campaignName] ?? campaignName;
+  let max: number | undefined;
+  for (const node of Object.values(FARM_NODES)) {
+    if (node.campaign !== name) continue;
+    if (max === undefined || node.nodeNumber > max) max = node.nodeNumber;
+  }
+  return max;
+}
+
+/**
+ * The API doesn't expose an explicit "completed"/"cleared" flag per battle —
+ * attemptsUsed is a daily counter (resets to 0 even for stages cleared long
+ * ago), not a lifetime completion flag, so it can't be used to measure
+ * progress (confirmed on a real account: early, obviously-cleared stages
+ * showed attemptsUsed: 0). The number of battle entries the API returns is
+ * the best available proxy: it only lists stages unlocked so far, so its
+ * length tracks how far the player has progressed.
  */
 function normalizeCampaign(campaign: TacticusCampaignProgress): CampaignProgress {
+  const totalBattles = getCampaignTotalBattles(campaign.name) ?? campaign.battles.length;
   return {
     campaignId: campaign.id,
     name: campaign.name,
     type: campaign.type,
-    // The API returns one entry per stage the campaign has, so the array
-    // length is a real total — not a guess or a hardcoded catalog value.
-    totalBattles: campaign.battles.length,
-    completedBattle: campaign.battles.filter((b) => b.attemptsUsed > 0).length,
+    totalBattles,
+    // The live array can include the documented "battleIndex 75, no actual
+    // battle" sentinel once fully unlocked, which would otherwise read as
+    // e.g. "76/75" — cap at the real total instead.
+    completedBattle: Math.min(campaign.battles.length, totalBattles),
   };
 }
 
