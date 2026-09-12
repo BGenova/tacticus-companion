@@ -71,6 +71,7 @@ src/
   - 🔲 Guild Raid / Guild War — nécessitent une clé API avec les scopes `Guild`/`Guild Raid` (la clé actuelle n'a que `Player`).
   - 🔲 Machines of War, Team builder — pas commencés.
 - ✅ Dashboard entièrement connecté au store (plus aucune donnée mock) — `src/data/mock.ts` supprimé.
+- ✅ Roster/CharacterDetail : catalogue statique étendu à 117 vrais personnages (`src/data/static/characters.ts`, IDs réels de l'API), portraits vendorisés (`public/character-portraits/`, voir `14_CHARACTER_PORTRAITS.md`), filtre alliance réellement fonctionnel (dépendait des noms/alliances corrects).
 
 ## Documentation
 
